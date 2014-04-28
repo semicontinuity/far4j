@@ -1,0 +1,16 @@
+!include $(FARSRCDIR)/plugins/makefile_vc_base
+#ANSI = 1
+#USERCPP = /D WIN32 /D _WIN32
+
+
+NAME = far4j
+LINK_OBJS = $(OBJDIR)\far4j.obj 
+DOCS = far4j_en.hlf far4j_ru.hlf far4j_en.lng far4j_ru.lng
+
+!include $(FARSRCDIR)/plugins/makefile_vc_def_inc
+
+!include $(FARSRCDIR)/plugins/makefile_vc_target_inc
+
+ALL: dirs
+
+$(OBJDIR)\far4j.obj: far4j.cpp far4jLng.hpp guid.hpp version.hpp $(COMINC)\plugin.hpp

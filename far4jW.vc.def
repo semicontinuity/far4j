@@ -1,0 +1,7 @@
+LIBRARY        far4j
+;DESCRIPTION    'far4j'
+EXPORTS
+  GetGlobalInfoW
+  SetStartupInfoW
+  GetPluginInfoW
+  OpenW
