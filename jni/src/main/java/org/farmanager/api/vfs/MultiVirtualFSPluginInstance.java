@@ -131,8 +131,8 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
      */
     @Override
     public int getFlags() {
-        return OPIF_USEHIGHLIGHTING.value ()
-            | OPIF_SHOWPRESERVECASE.value ()
+        return /*OPIF_USEHIGHLIGHTING.value ()
+            | */OPIF_SHOWPRESERVECASE.value ()
             | OPIF_ADDDOTS.value ();
     }
 

@@ -80,8 +80,8 @@ void WINAPI GetGlobalInfoW(struct GlobalInfo *Info)
 }
 
 /*
- Функция GetMsg возвращает строку сообщения из языкового файла.
- А это надстройка над Info.GetMsg для сокращения кода :-)
+ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ GetMsg пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ Info.GetMsg пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ :-)
 */
 const wchar_t *GetMsg(int MsgId)
 {
@@ -114,9 +114,9 @@ JNIEnv* create_vm(JavaVM ** jvm) {
 */
 
 /*
-Функция SetStartupInfoW вызывается один раз, перед всеми
-другими функциями. Она передается плагину информацию,
-необходимую для дальнейшей работы.
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅ SetStartupInfoW пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ,
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 */
 void WINAPI SetStartupInfoW(const struct PluginStartupInfo *psi)
 {
@@ -235,6 +235,15 @@ log ("| Problem 1!");
     }
 
 
+    // it was 0 sometimes if initialized in the GetOpenPluginInfo (?)
+    // TODO: there is a suspicion that these 0's occur if an exception was thrown!
+    jmid_PluginInstance_getStartPanelMode = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getStartPanelMode", "()I");
+    if (jmid_PluginInstance_getStartPanelMode == 0) {
+        log (TEXT("jmid_PluginInstance_getStartPanelMode == 0"));
+        return;
+    }
+
     jcls_PluginPanelItem = env->FindClass ("org/farmanager/api/PluginPanelItem");
     if (jcls_PluginPanelItem == 0) {
         log (TEXT("jcls_PluginPanelItem == 0"));
@@ -246,7 +255,7 @@ log ("| Problem 1!");
 }
 
 /*
-Функция GetPluginInfoW вызывается для получения информации о плагине
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅ GetPluginInfoW пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 */
 void WINAPI GetPluginInfoW(struct PluginInfo *Info)
 {
@@ -268,10 +277,10 @@ struct PluginInstanceData
 {
     /** Reference to a java counterpart - an instance of AbstractPluginInstance */
     jobject instance;
-    //PanelMode panelModes[10];
-    //pchar* panelModeColumnTitles[10];
+    PanelMode panelModes[10];
+    const _TCHAR** panelModeColumnTitles[10];
     //KeyBarTitles keyBarTitles;
-    //InfoPanelLine* infoPanelLines;
+    InfoPanelLine* infoPanelLines;
 };
 
 /**
@@ -287,7 +296,7 @@ struct PluginPanelItemData
 
 
 /*
-  Функция OpenPluginW вызывается при создании новой копии плагина.
+  пїЅпїЅпїЅпїЅпїЅпїЅпїЅ OpenPluginW пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
 */
 HANDLE WINAPI OpenW(const struct OpenInfo *OInfo) {
 //    if (initJavaResult != 0) return INVALID_HANDLE_VALUE; // TODO?
@@ -437,17 +446,19 @@ intptr_t WINAPI GetFindDataW(struct GetFindDataInfo *Info) {
         if (customColumns != 0)
         {
             int l = env->GetArrayLength (customColumns);
+
             items[i].CustomColumnNumber = l;            
             if (l > 0)
             {                
-                userData->customColumns = new _TCHAR*[l];
-                userData->customColumnStrings = new jstring[l];                
-                items[i].CustomColumnData = userData->customColumns;
-                for (int j = 0; j < l; j++)
-                {
+                //userData->customColumns = new _TCHAR*[l];
+                //userData->customColumnStrings = new jstring[l];
+                const _TCHAR** custom  = new const _TCHAR*[l];
+                items[i].CustomColumnData = custom;
+                for (int j = 0; j < l; j++) {
                     jstring columnData = (jstring) env->GetObjectArrayElement (customColumns, j);
-                    userData->customColumnStrings[j] = columnData;
-                    userData->customColumns[j] = columnData == NULL ? NULL : (_TCHAR*)env->GetStringChars (columnData, 0);
+//                    userData->customColumnStrings[j] = columnData;
+//                    userData->customColumns[j] = columnData == NULL ? NULL : (_TCHAR*)env->GetStringChars (columnData, 0);
+                    custom[j] = columnData == NULL ? NULL : (const _TCHAR*)env->GetStringChars (columnData, 0);
                 }
             }
         }       
@@ -462,6 +473,10 @@ intptr_t WINAPI GetFindDataW(struct GetFindDataInfo *Info) {
 
     log("< GetFindData");
     return TRUE;
+}
+
+
+void WINAPI FreeFindDataW(const struct FreeFindDataInfo *Info) {
 }
 
 
@@ -487,4 +502,207 @@ intptr_t WINAPI SetDirectoryW(
 
     //log ("< SetDirectory");
     return TRUE;
+}
+
+
+void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
+    PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (openPluginInfo->hPanel);
+    jobject jobj_PluginInstance = data->instance;
+
+    // StructSize
+    openPluginInfo->StructSize = sizeof(OpenPanelInfo);
+
+    // Flags (NB now 64 bit!)
+    jmethodID jmid_AbstractPluginInstance_getFlags = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getFlags", "()I");
+    if (jmid_AbstractPluginInstance_getFlags == 0) {
+        log(TEXT("jmid_AbstractPluginInstance_getFlags := 0"));
+        return ;
+    }
+    jint Flags   = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_getFlags);
+    openPluginInfo->Flags  = Flags;
+
+    // HostFile
+    // Name of the file used to emulate the file system.
+    // If plugin does not emulate a file system based on a file, set this variable to NULL.
+    jmethodID jmid_PluginInstance_getHostFile = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getHostFile", "()Ljava/lang/String;");
+//    log ("| jmid_PluginInstance_getHostFile=", (int)jmid_PluginInstance_getHostFile);
+    if (jmid_PluginInstance_getHostFile== NULL) return; // TODO
+//    log ("| CallObjectMethod getHostFile");
+    jstring jstr_HostFile = (jstring)env->CallObjectMethod (jobj_PluginInstance, jmid_PluginInstance_getHostFile);
+    openPluginInfo->HostFile   = jstr_HostFile == NULL ? NULL : (const _TCHAR*)env->GetStringChars(jstr_HostFile, 0); // TODO not released!
+
+    // CurDir
+    // Current plugin directory.
+    // If a plugin does not support a current directory, set it to an empty string.
+    // If a plugin returns an empty string in this field, it will be closed automatically when Enter is pressed on "..".
+    jmethodID jmid_PluginInstance_getCurDir = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getCurDir", "()Ljava/lang/String;");
+//    log ("| jmid_PluginInstance_getCurDir=", (int)jmid_PluginInstance_getCurDir);
+    if (jmid_PluginInstance_getCurDir== NULL) return; // TODO
+//    log ("| CallObjectMethod getCurDir");
+    jstring jstr_CurDir = (jstring)env->CallObjectMethod (jobj_PluginInstance, jmid_PluginInstance_getCurDir);
+    openPluginInfo->CurDir = jstr_CurDir == NULL ? NULL : (const _TCHAR*)env->GetStringChars(jstr_CurDir, 0); // TODO not released!
+
+
+    // Format
+    // Name of the plugin format. It is displayed in the FAR copy dialog.
+    jmethodID jmid_PluginInstance_getFormat      = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getFormat", "()Ljava/lang/String;");
+//    log ("| jmid_PluginInstance_getFormat=", (int)jmid_PluginInstance_getFormat);
+    if (jmid_PluginInstance_getFormat== NULL) return; // TODO
+//    log ("| CallObjectMethod getFormat");
+    jstring jstr_Format= (jstring)env->CallObjectMethod (jobj_PluginInstance, jmid_PluginInstance_getFormat);
+    openPluginInfo->Format = jstr_Format == NULL ? NULL : (const _TCHAR*)env->GetStringChars(jstr_Format, 0); // TODO not released!
+
+    // PanelTitle
+    // Plugin panel title.
+    jmethodID jmid_PluginInstance_getPanelTitle = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getPanelTitle", "()Ljava/lang/String;");
+//    log ("| jmid_PluginInstance_getPanelTitle=", (int)jmid_PluginInstance_getPanelTitle);
+    if (jmid_PluginInstance_getPanelTitle== NULL) return; // TODO
+//    log ("| CallObjectMethod getPanelTitle");
+    jstring jstr_PanelTitle = (jstring)env->CallObjectMethod (jobj_PluginInstance, jmid_PluginInstance_getPanelTitle);
+    openPluginInfo->PanelTitle = jstr_PanelTitle == NULL ? NULL : (const _TCHAR*)env->GetStringChars(jstr_PanelTitle, 0); // TODO not released!
+
+    // InfoLines
+    // Address of an array of InfoPanelLine structures.
+    // Each structure describes one line in the information panel.
+    // If you do not need to display plugin dependent text in information panel, set InfoLines to NULL.
+
+    // InfoLinesNumber
+    // Number of InfoPanelLine structures.
+    jmethodID jmid_AbstractPluginInstance_getInfoPanelLines = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getInfoPanelLines", "()[Lorg/farmanager/api/jni/FarInfoPanelLine;");
+//    log ("| CallObjectMethod getInfoPanelLines");
+    jobjectArray infoPanelLinesArray = (jobjectArray) env->CallObjectMethod (
+        jobj_PluginInstance, jmid_AbstractPluginInstance_getInfoPanelLines);
+//    log ("infoPanelLinesArray:", (int)infoPanelLinesArray);
+    if (infoPanelLinesArray != NULL) {
+        int length = env->GetArrayLength (infoPanelLinesArray);
+//        log ("length:", length);
+        openPluginInfo->InfoLinesNumber = length;
+        if (length > 0) {
+            data->infoPanelLines = new InfoPanelLine[length];
+            openPluginInfo->InfoLines = data->infoPanelLines;
+
+            jclass jcls_FarInfoPanelLine     = env->FindClass ("org/farmanager/api/jni/FarInfoPanelLine");
+            jfieldID jfid_text      = env->GetFieldID (jcls_FarInfoPanelLine, "text",      "Ljava/lang/String;");
+            jfieldID jfid_data      = env->GetFieldID (jcls_FarInfoPanelLine, "data",      "Ljava/lang/String;");
+            jfieldID jfid_separator = env->GetFieldID (jcls_FarInfoPanelLine, "separator", "Z");
+            for (int i=0; i < length; i++) {
+                jobject element = env->GetObjectArrayElement (infoPanelLinesArray, i);
+
+                jstring jstr_text = (jstring) env->GetObjectField (element, jfid_text);
+                const _TCHAR* ctext = (const _TCHAR*) env->GetStringChars (jstr_text, 0);
+                data->infoPanelLines[i].Text = ctext;
+                //env->ReleaseStringUTFChars (jstr_text, ctext);
+
+                jstring jstr_data = (jstring) env->GetObjectField (element, jfid_data);
+                const _TCHAR* cdata = (const _TCHAR*) env->GetStringChars (jstr_data, 0);
+                data->infoPanelLines[i].Data = cdata;
+                //env->ReleaseStringUTFChars (jstr_data, cdata);
+
+                jboolean jboo_separator = env->GetBooleanField (element, jfid_separator);
+                data->infoPanelLines[i].Flags = jboo_separator ? IPLFLAGS_SEPARATOR : 0;
+            }
+        }
+    }
+
+    // ...
+
+    // PanelModesArray
+    // Address of an array of PanelMode structures. Using it, you can redefine view mode settings.
+    // The first structure describes view mode 0, the second one describes mode 1 and so on.
+    // If you do not need to define new panel modes, set PanelModesArray to NULL.
+    //
+    // PanelModesNumber
+    // Number of  PanelMode structures
+
+    // TODO: dynamic data structures are not freed! Can add lazy init...
+    jmethodID jmid_AbstractPluginInstance_getPanelModes= env->GetMethodID (
+        jcls_AbstractPluginInstance, "getPanelModes", "()[Lorg/farmanager/api/PanelMode;");
+    //log ("| CallObjectMethod getPanelModes");
+    jobjectArray panelModeArray = (jobjectArray) env->CallObjectMethod (
+        jobj_PluginInstance, jmid_AbstractPluginInstance_getPanelModes);
+    //log ("panelModeArray:", (int)panelModeArray);
+    if (panelModeArray != 0)
+    {
+    int length = env->GetArrayLength (panelModeArray);
+    //log ("length:", length);
+    if (length > 0)
+    {
+        jclass jcls_PanelMode            = env->FindClass ("org/farmanager/api/PanelMode");
+        jfieldID jfid_columnTypes        = env->GetFieldID (jcls_PanelMode, "columnTypes",    "Ljava/lang/String;");
+        jfieldID jfid_columnWidths       = env->GetFieldID (jcls_PanelMode, "columnWidths",   "Ljava/lang/String;");
+        jfieldID jfid_columnTitles       = env->GetFieldID (jcls_PanelMode, "columnTitles",   "[Ljava/lang/String;");
+        jfieldID jfid_fullScreen         = env->GetFieldID (jcls_PanelMode, "fullScreen",     "I");
+        jfieldID jfid_detailedStatus     = env->GetFieldID (jcls_PanelMode, "detailedStatus", "I");
+        jfieldID jfid_statusColumnTypes  = env->GetFieldID (jcls_PanelMode, "statusColumnTypes",    "Ljava/lang/String;");
+        jfieldID jfid_statusColumnWidths = env->GetFieldID (jcls_PanelMode, "statusColumnWidths",   "Ljava/lang/String;");
+        for (int i=0; i < length; i++)
+        {
+            jobject element = env->GetObjectArrayElement (panelModeArray, i);
+            // TODO: check element for NULL
+            memset(&(data->panelModes[i]), 0, sizeof(PanelMode));
+
+            jint jint_fullScreen = env->GetIntField (element, jfid_fullScreen);
+            jint jint_detailedStatus = env->GetIntField (element, jfid_detailedStatus);
+            data->panelModes[i].Flags = (jint_detailedStatus ? PMFLAGS_FULLSCREEN : 0) | (jint_detailedStatus ? PMFLAGS_DETAILEDSTATUS : 0);
+
+            jstring jstr_columnTypes = (jstring) env->GetObjectField (element, jfid_columnTypes);
+            data->panelModes[i].ColumnTypes = (const _TCHAR*) env->GetStringChars (jstr_columnTypes, 0);
+//            log ("| ColumnTypes=", data->panelModes[i].ColumnTypes);
+
+            jstring jstr_columnWidths = (jstring) env->GetObjectField (element, jfid_columnWidths);
+            data->panelModes[i].ColumnWidths = (const _TCHAR*) env->GetStringChars (jstr_columnWidths, 0);
+//            log ("| ColumnWidths=", data->panelModes[i].ColumnWidths);
+
+            jobjectArray joar_columnTitles = (jobjectArray) env->GetObjectField (element, jfid_columnTitles);
+            if (joar_columnTitles != NULL)
+            {
+                int length = env->GetArrayLength (joar_columnTitles);
+                if (length > 0)
+                {
+                    // TODO: now we do not release anything! We should!
+                    data->panelModeColumnTitles[i] = new const _TCHAR*[length];
+                    for (int j=0; j < length; j++)
+                    {
+                        jstring jstr_title = (jstring) env->GetObjectArrayElement (joar_columnTitles, j);
+                        // TODO: handle NULL
+
+                        data->panelModeColumnTitles[i][j] = (const _TCHAR*) env->GetStringChars (jstr_title, 0);
+                        // TODO: memory
+                    }
+                    data->panelModes[i].ColumnTitles = data->panelModeColumnTitles[i];
+                }
+            }
+
+            // TODO: GC!
+            jstring jstr_statusColumnTypes = (jstring) env->GetObjectField (element, jfid_statusColumnTypes);
+            if (jstr_statusColumnTypes != NULL)
+                data->panelModes[i].StatusColumnTypes = (const _TCHAR*) env->GetStringChars (jstr_statusColumnTypes, 0);
+
+            // TODO: GC!
+            jstring jstr_statusColumnWidths = (jstring) env->GetObjectField (element, jfid_statusColumnWidths);
+            if (jstr_statusColumnWidths != NULL)
+                data->panelModes[i].StatusColumnWidths = (const _TCHAR*) env->GetStringChars (jstr_statusColumnWidths, 0);
+        }
+        openPluginInfo->PanelModesNumber = length;
+        openPluginInfo->PanelModesArray = data->panelModes;
+    }
+    }
+
+    // StartPanelMode
+    // View mode that will be set directly after creating the plugin panel.
+    // It must be in the '0'+<view mode number> form.
+    // For example, '1' or 49 will set the view mode Brief.
+    // If you do not wish to change the panel view mode after starting plugin, set StartPanelMode to 0.
+//    log ("| jmid_PluginInstance_getStartPanelMode=", (int)jmid_PluginInstance_getStartPanelMode);
+    if (jmid_PluginInstance_getStartPanelMode== NULL) return; // TODO
+//    log ("| CallObjectMethod getStartPanelMode");
+    openPluginInfo->StartPanelMode = env->CallIntMethod (jobj_PluginInstance, jmid_PluginInstance_getStartPanelMode);
+
+    // ...
 }
