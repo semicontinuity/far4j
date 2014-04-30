@@ -226,6 +226,22 @@ log ("| Problem 1!");
         return;
     }
 
+    // pre-initialize commonly used classes and methods
+    jmid_PluginInstance_getFindData = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getFindData", "(I)[Lorg/farmanager/api/PluginPanelItem;");
+    if (jmid_PluginInstance_getFindData == 0) {
+        log (TEXT("jmid_PluginInstance_getFindData == 0"));
+        return;
+    }
+
+
+    jcls_PluginPanelItem = env->FindClass ("org/farmanager/api/PluginPanelItem");
+    if (jcls_PluginPanelItem == 0) {
+        log (TEXT("jcls_PluginPanelItem == 0"));
+        return;
+    }
+
+
     log (TEXT("| OK"));
 }
 
@@ -256,6 +272,17 @@ struct PluginInstanceData
     //pchar* panelModeColumnTitles[10];
     //KeyBarTitles keyBarTitles;
     //InfoPanelLine* infoPanelLines;
+};
+
+/**
+ * Additional data attached to every PluginPanelItem.
+ * A pointer to this structure is stored in PluginPanelItem.UserData
+ */
+struct PluginPanelItemData
+{
+    _TCHAR** customColumns;
+    jstring* customColumnStrings; // we have to store pointers to jstrings to be able to release memory
+    jstring jDescription;
 };
 
 
@@ -300,4 +327,139 @@ HANDLE WINAPI OpenW(const struct OpenInfo *OInfo) {
 
     log (TEXT("< OpenPlugin"));
     return reinterpret_cast<HANDLE> (data);
+}
+
+
+intptr_t WINAPI GetFindDataW(struct GetFindDataInfo *Info) {
+    log ("> GetFindData");
+    PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
+    jobject jobj_PluginInstance = data->instance;
+
+    jobjectArray pluginPanelItemArray = (jobjectArray) env->CallObjectMethod (
+        jobj_PluginInstance, jmid_PluginInstance_getFindData, Info->OpMode);
+    //log ("pluginPanelItemArray:", (int)pluginPanelItemArray);
+    if (pluginPanelItemArray == 0) return 0;
+
+    int length = env->GetArrayLength (pluginPanelItemArray);
+    // TODO: check for thrown exception
+    //log ("length:", length);
+
+
+    if (length > 0)
+    {
+    // *************************************************************************
+    PluginPanelItem* items = new PluginPanelItem [length];
+    // *************************************************************************
+    log (TEXT("ITEMS:"), (int)items);
+    // TODO: currently only 3 String-type columns can be used by plugins (name, owner, description)
+    // TODO: this should be changed - just use custom columns always.. (perhaps leave name as PK to be able to navigate)
+    jfieldID fidName              = env->GetFieldID (jcls_PluginPanelItem, "cFileName", "Ljava/lang/String;");
+    jfieldID fid_dwFileAttributes = env->GetFieldID (jcls_PluginPanelItem, "dwFileAttributes", "I");
+    jfieldID jfid_nFileSizeLow    = env->GetFieldID (jcls_PluginPanelItem, "nFileSizeLow",     "I");
+    jfieldID jfid_nFileSizeHigh   = env->GetFieldID (jcls_PluginPanelItem, "nFileSizeHigh",    "I");
+    jfieldID fidDescription       = env->GetFieldID (jcls_PluginPanelItem, "description", "Ljava/lang/String;");
+    jfieldID fidOwner             = env->GetFieldID (jcls_PluginPanelItem, "owner", "Ljava/lang/String;");
+
+    jfieldID fidCreationTime      = env->GetFieldID (jcls_PluginPanelItem, "lCreationTime", "J");
+    jfieldID fidLastWriteTime     = env->GetFieldID (jcls_PluginPanelItem, "lLastWriteTime", "J");
+    jfieldID jfid_numberOfLinks   = env->GetFieldID (jcls_PluginPanelItem, "numberOfLinks",    "I");
+    jfieldID jfid_crc32           = env->GetFieldID (jcls_PluginPanelItem, "crc32",    "I");
+    jfieldID jfid_customColumns   = env->GetFieldID (jcls_PluginPanelItem, "customColumns",    "[Ljava/lang/String;");
+
+    for (int i=0; i < length; i++)
+    {
+        //log ("ITER");
+        jobject element = env->GetObjectArrayElement (pluginPanelItemArray, i);
+        //log ("element:");
+
+        memset (&items[i], 0, sizeof(PluginPanelItem));
+
+        PluginPanelItemData* userData = new PluginPanelItemData;
+        items[i].UserData.Data = userData;
+        memset (userData, 0, sizeof(PluginPanelItemData));
+
+        // FileName
+        // -----------------------------------------------------------------------------------
+        jstring name = (jstring) env->GetObjectField (element, fidName);
+        const _TCHAR* fileName = (const _TCHAR*)env->GetStringChars (name, 0);
+        //log (cFileName);
+        items[i].FileName = fileName;
+        //env->ReleaseStringUTFChars (name, cFileName);
+
+        // FileAttributes
+        // -----------------------------------------------------------------------------------     
+        jint j_FileAttributes = env->GetIntField (element, fid_dwFileAttributes);
+        items[i].FileAttributes = j_FileAttributes;
+
+        // FileSize
+        // -----------------------------------------------------------------------------------     
+        jint j_nFileSizeLow = env->GetIntField (element, jfid_nFileSizeLow);
+        jint j_nFileSizeHigh = env->GetIntField (element, jfid_nFileSizeHigh);
+        items[i].FileSize = (j_nFileSizeHigh<<32) | j_nFileSizeLow;
+
+        // CreationTime
+        // -----------------------------------------------------------------------------------
+        jlong j_lCreationTime = env->GetLongField (element, fidCreationTime);
+        items[i].CreationTime.dwLowDateTime  = (DWORD)(j_lCreationTime);
+        items[i].CreationTime.dwHighDateTime = (DWORD)(j_lCreationTime>>32);
+
+        // LastWriteTime
+        // -----------------------------------------------------------------------------------
+        jlong j_lLastWriteTime = env->GetLongField (element, fidLastWriteTime);
+        items[i].LastWriteTime.dwLowDateTime  = (DWORD)(j_lLastWriteTime);
+        items[i].LastWriteTime.dwHighDateTime = (DWORD)(j_lLastWriteTime>>32);
+        
+
+        // Description
+        // -----------------------------------------------------------------------------------
+        jstring desc = (jstring) env->GetObjectField (element, fidDescription);
+        userData->jDescription = desc;
+        if (desc != NULL)
+            items[i].Description = (const _TCHAR*)env->GetStringChars (desc, 0);
+
+        // Owner
+        // -----------------------------------------------------------------------------------
+        jstring owner = (jstring) env->GetObjectField (element, fidOwner);
+        if (owner != NULL)
+            items[i].Owner = (const _TCHAR*)env->GetStringChars (owner, 0);
+
+
+        // other fields
+        // -----------------------------------------------------------------------------------
+        jint j_numberOfLinks = env->GetIntField (element, jfid_numberOfLinks);
+        items[i].NumberOfLinks = j_numberOfLinks;
+
+        jint j_crc32 = env->GetIntField (element, jfid_crc32);
+        items[i].CRC32 = j_crc32;
+
+        jobjectArray customColumns = (jobjectArray) env->GetObjectField(
+            element, jfid_customColumns);
+        if (customColumns != 0)
+        {
+            int l = env->GetArrayLength (customColumns);
+            items[i].CustomColumnNumber = l;            
+            if (l > 0)
+            {                
+                userData->customColumns = new _TCHAR*[l];
+                userData->customColumnStrings = new jstring[l];                
+                items[i].CustomColumnData = userData->customColumns;
+                for (int j = 0; j < l; j++)
+                {
+                    jstring columnData = (jstring) env->GetObjectArrayElement (customColumns, j);
+                    userData->customColumnStrings[j] = columnData;
+                    userData->customColumns[j] = columnData == NULL ? NULL : (_TCHAR*)env->GetStringChars (columnData, 0);
+                }
+            }
+        }       
+    }
+    Info->PanelItem   = items;
+    }
+
+//    items[3].FindData.dwFileAttributes = FILE_ATTRIBUTE_SYSTEM;
+//    strcpy (items[3].FindData.cFileName, "system");
+    Info->ItemsNumber = length;
+    //log("Populated items: ", length);
+
+    log("< GetFindData");
+    return TRUE;
 }
