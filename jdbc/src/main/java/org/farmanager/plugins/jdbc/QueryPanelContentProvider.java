@@ -124,8 +124,8 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
     }
 
     @Override
-    public PluginPanelItem[] getFindData (final int opMode)
-    {
+    public PluginPanelItem[] getFindData (final int opMode) {
+        LOGGER.info("getFindData " + opMode);
         // TODO: smarter: cache!
         fillInfoPanelLines ();
         pluginPanelItems = executeQuery(query, data, columnCount);
@@ -141,22 +141,22 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
                 0, null, "Please wait\nExecuting query", 0);
 
 
-        try
-        {
+        try {
             Connection conn = DriverManager.getConnection (url);
+            LOGGER.debug("Connection to " + url + " established");
             Statement stmt = conn.createStatement ();
+            LOGGER.debug("Executing query " + query);
+            LOGGER.debug("Column count: " + columnCount);
             ResultSet rs = stmt.executeQuery (query);
 
             final ArrayList<PluginPanelItem> items = new ArrayList<PluginPanelItem> ();
-            while (rs.next ())
-            {
+            while (rs.next ()) {
                 final PluginPanelItem pluginPanelItem = new PluginPanelItem ();
                 // First column is ID
                 final int id = rs.getInt(1);
                 // keep id in crc32.
                 // we use Far presentation model to data model, which is ugly
                 pluginPanelItem.crc32 = id;
-//                LOGGER.info("Set id " + id);
                 pluginPanelItem.dwFileAttributes = PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
                 pluginPanelItem.customColumns = new String[columnCount];
                 for (int i = 0; i < columnCount; i++)
@@ -184,13 +184,11 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
             items.toArray (pluginPanelItems);
             return pluginPanelItems;
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             LOGGER.error (e, e);
             return null;    // TODO
         }
-        finally
-        {
+        finally {
             AbstractPlugin.restoreScreen (hScreen);
         }
     }
@@ -227,8 +225,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
         return properties.getProperty ("column." + i + ".title");
     }
 
-    private static int nameColumn (Properties properties)
-    {
+    private static int nameColumn (Properties properties) {
         try
         {
             return Integer.parseInt(properties.getProperty("namecolumn"));
@@ -512,6 +509,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
 
     @Override
     public void setDirectory(String directory) {
+        LOGGER.info("setDirectory " + directory);
         try {
             if ("..".equals(directory)) {
                 instance.navigateToSessionList();

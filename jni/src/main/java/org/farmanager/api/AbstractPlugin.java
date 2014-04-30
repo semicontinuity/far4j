@@ -218,17 +218,17 @@ public abstract class AbstractPlugin
      * All handles allocated by saveScreen must be passed to restoreScreen
      * to avoid memory leaks.
      */
-    public static int saveScreen ()
-    {
+    public static int saveScreen () {
         return saveScreen (0, 0, -1, -1);
     }
 
     /**
      * A wrapper around SaveScreen service function.
+     *
      * @param x1 Screen area coordinate X1.
-     * If X2 or Y2 is equal to -1,
-     * they are replaced with screen right or screen bottom coordinate correspondingly.
-     * So SaveScreen(0,0,-1,-1) will save the entire screen.
+     *           If X2 or Y2 is equal to -1,
+     *           they are replaced with screen right or screen bottom coordinate correspondingly.
+     *           So SaveScreen(0,0,-1,-1) will save the entire screen.
      * @param y1 Screen area coordinate Y1.
      * @param x2 Screen area coordinate X2.
      * @param y2 Screen area coordinate Y1.
@@ -236,12 +236,18 @@ public abstract class AbstractPlugin
      * All handles allocated by saveScreen must be passed to restoreScreen
      * to avoid memory leaks.
      */
-    public static native int saveScreen (final int x1, final int y1, final int x2, final int y2);
+    public static /*native */int saveScreen(final int x1, final int y1, final int x2, final int y2) {
+        return 0;
+    }
 
-    public static native void restoreScreen (final int hScreen);
+    public static /*native */void restoreScreen(final int hScreen) {
 
-    public static native int message (
-        final int flags, final String helpTopic, final String items, final int buttonsNumber);
+    }
+
+    public static /*native */int message (
+        final int flags, final String helpTopic, final String items, final int buttonsNumber) {
+        return 0;
+    }
 
 
     /**

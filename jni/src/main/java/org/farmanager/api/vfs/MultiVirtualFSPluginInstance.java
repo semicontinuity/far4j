@@ -54,6 +54,7 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
      */
     @Override
     public void setDirectory(final String directory) {
+        LOGGER.info("setDirectory " + directory);
         panelContentProvider.setDirectory(directory);
     }
 
@@ -91,8 +92,10 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
      */
     @Override
     public PluginPanelItem[] getFindData(final int opMode) {
-
-        return panelContentProvider.getFindData(opMode);
+        LOGGER.info("getFindData " + opMode);
+        final PluginPanelItem[] findData = panelContentProvider.getFindData(opMode);
+        LOGGER.info("getFindData returns " + findData.length + " entries");
+        return findData;
     }
 
     @Override

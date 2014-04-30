@@ -88,43 +88,37 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     }
 
 
-    public void setDirectory (String directory)
-    {
+    public void setDirectory (String directory) {
+        LOGGER.info("setDirectory " + directory);
         if ("..".equals (directory))
         {
             LOGGER.info("currentSessionsFolder=" + currentSessionsFolder);
             LOGGER.info("rootSessionsFolder=" + rootSessionsFolder);
             LOGGER.info("?" + currentSessionsFolder.equals(rootSessionsFolder));
-            if (currentSessionsFolder.equals(rootSessionsFolder))
-            {
+            if (currentSessionsFolder.equals(rootSessionsFolder)) {
                 AbstractPlugin.closePlugin ();
             }
-            else
-            {
+            else {
                 currentSessionsFolder = currentSessionsFolder.getParentFile();
             }
             return;
         }
 
-        try
-        {
+        try {
             final File target = new File (currentSessionsFolder, directory);
             if (target.isFile()) {
                 LOGGER.debug("Opening session");
-                listener.openSession (loadSession(target));
+                listener.openSession(loadSession(target));
             }
-            else
-            {
+            else {
                 LOGGER.debug("Opening sublist");
                 currentSessionsFolder = target;
             }
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             LOGGER.error (e, e);
         }
-        catch (NoClassDefFoundError x)
-        {
+        catch (NoClassDefFoundError x) {
             LOGGER.fatal (x, x);
         }
     }

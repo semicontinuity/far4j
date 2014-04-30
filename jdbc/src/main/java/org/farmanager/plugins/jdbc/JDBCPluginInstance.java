@@ -1,5 +1,6 @@
 package org.farmanager.plugins.jdbc;
 
+import org.apache.log4j.Logger;
 import org.farmanager.api.vfs.GenericSessionListPanelContentProvider;
 import org.farmanager.api.vfs.MultiVirtualFSPluginInstance;
 
@@ -14,6 +15,8 @@ import java.util.Set;
 public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
         implements GenericSessionListPanelContentProvider.Listener
 {
+    static Logger LOGGER = Logger.getLogger(JDBCPluginInstance.class);
+
     protected final JDBCPlugin plugin;
 
     private final GenericSessionListPanelContentProvider sessionListPanelContentProvider;
@@ -40,19 +43,18 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
         this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this);
     }
 
-    public void navigateToSessionList ()
-    {
+    public void navigateToSessionList () {
+        LOGGER.debug("navigateToSessionList");
         panelContentProvider = sessionListPanelContentProvider;
     }
 
-    public void openSession (final Properties properties) throws Exception
-    {
+    public void openSession (final Properties properties) throws Exception {
         queryPanelContentProvider.init (properties);
         navigateToQueryResult();
     }
 
-    public void navigateToQueryResult()
-    {
+    public void navigateToQueryResult() {
+        LOGGER.debug("navigateToQueryResult");
         panelContentProvider = queryPanelContentProvider;
     }
 

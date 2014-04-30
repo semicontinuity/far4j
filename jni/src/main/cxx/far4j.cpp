@@ -395,7 +395,7 @@ intptr_t WINAPI GetFindDataW(struct GetFindDataInfo *Info) {
         // -----------------------------------------------------------------------------------     
         jint j_nFileSizeLow = env->GetIntField (element, jfid_nFileSizeLow);
         jint j_nFileSizeHigh = env->GetIntField (element, jfid_nFileSizeHigh);
-        items[i].FileSize = (j_nFileSizeHigh<<32) | j_nFileSizeLow;
+        items[i].FileSize = (((unsigned long long)j_nFileSizeHigh)<<32) | (unsigned long long)j_nFileSizeLow;
 
         // CreationTime
         // -----------------------------------------------------------------------------------
@@ -461,5 +461,30 @@ intptr_t WINAPI GetFindDataW(struct GetFindDataInfo *Info) {
     //log("Populated items: ", length);
 
     log("< GetFindData");
+    return TRUE;
+}
+
+
+intptr_t WINAPI SetDirectoryW(
+  const struct SetDirectoryInfo *Info)
+{
+    //log ("> SetDirectory");
+    //log ("| directory:");
+    //log (dir);
+    
+    PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
+    jobject jobj_PluginInstance = data->instance;
+//    jobject jobj_PluginInstance = reinterpret_cast<jobject> (hPlugin);
+
+
+    jmethodID jmid_AbstractPluginInstance_setDirectory = env->GetMethodID (
+        jcls_AbstractPluginInstance, "setDirectory", "(Ljava/lang/String;)V");
+    //log ("| jmid_AbstractPluginInstance_setDirectory=", (int)jmid_AbstractPluginInstance_setDirectory);
+    if (jmid_AbstractPluginInstance_setDirectory== NULL) return FALSE; // TODO proper panic
+    //log ("| CallVoidMethod setDirectory");
+    jstring jstr_dir = env->NewString ((const jchar*)Info->Dir, _tcslen(Info->Dir)); // TODO: think of GC, etc...
+    env->CallVoidMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_setDirectory, jstr_dir);
+
+    //log ("< SetDirectory");
     return TRUE;
 }
