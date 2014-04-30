@@ -342,7 +342,7 @@ AddOption(char *str, void *info)
 {
 //    log(TEXT("Adding JVM option: "));
 
-
+/*
     size_t buflen = strlen(str) * 2 + 2;
     wchar_t *debugstr = reinterpret_cast<wchar_t*> (MemAlloc(buflen));
     MultiByteToWideChar(
@@ -355,7 +355,7 @@ AddOption(char *str, void *info)
     );
     log(debugstr);
     free(debugstr);
-
+*/
 
     /*
      * Expand options array if needed to accomodate at least one more
@@ -380,10 +380,7 @@ AddOption(char *str, void *info)
 
 
 static void
-SetClassPath(const wchar_t *s)
-{
-
-
+SetClassPath(const wchar_t *s) {
     size_t buflen = wcslen(s) * 2 + 2;
     char *def = reinterpret_cast<char*> (MemAlloc(buflen));
     strcpy(def, "-Djava.class.path=");

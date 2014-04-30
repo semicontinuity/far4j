@@ -28,7 +28,6 @@ static char pluginClass[128];
 
 
 
-static jobject   plugin;
 
 static jclass    jcls_AbstractPlugin;
 static jclass    jcls_AbstractPluginInstance;
@@ -41,7 +40,11 @@ static jmethodID jmid_PluginInstance_setDirectory;
 static jmethodID jmid_PluginInstance_getFindData;
 static jmethodID jmid_PluginInstance_getStartPanelMode;
 
+static jobject jobj_Plugin;
+static jobject jobj_PluginReference;
 
+static jobject jobj_PluginInstance;
+static jobject jobj_PluginInstanceReference;
 
 
 #if defined(__GNUC__)
@@ -66,6 +69,7 @@ BOOL WINAPI DllMainCRTStartup(HANDLE hDll,DWORD dwReason,LPVOID lpReserved)
 
 void WINAPI GetGlobalInfoW(struct GlobalInfo *Info)
 {
+//log (TEXT("| GetGlobalInfoW"));
 	Info->StructSize=sizeof(GlobalInfo);
 	Info->MinFarVersion=FARMANAGERVERSION;
 	Info->Version=PLUGIN_VERSION;
@@ -127,7 +131,6 @@ void WINAPI SetStartupInfoW(const struct PluginStartupInfo *psi)
     // construct the name of the file containing the name of plugin class
     _tcsncpy (pluginClassFileName, Info.ModuleName, pluginFolderNameLength);
     _tcscpy (pluginClassFileName + pluginFolderNameLength, PLUGIN_CLASS_FILE_NAME);
-
     // read the classpath from file
     FILE* pluginClassFile = _tfopen(pluginClassFileName, TEXT("rt"));
     if (pluginClassFile == NULL) return; // TODO
@@ -162,7 +165,7 @@ void WINAPI SetStartupInfoW(const struct PluginStartupInfo *psi)
         FindClose(hFind);
     }
 
-    log(classPath);
+//    log(classPath);
     SetClassPath(classPath);
 
 // sorry, hardcoded for a while
@@ -182,43 +185,46 @@ log ("| Problem 1!");
 	return;
     }
 
-    log (TEXT("| VM Initialized"));
+//    log (TEXT("| VM Initialized"));
 
-    if (vm) log (TEXT("| VM OK"));
-
-
-    jcls_Plugin = env->FindClass ("Plugin");
-//    log ("| jcls_Plugin=", (int)jcls_Plugin);
-    if (jcls_Plugin == 0) {
-        log (TEXT("| No Plugin"));
-        return; // TODO
-    }
-    log (TEXT("| 1"));
+//    if (vm) log (TEXT("| VM OK"));
 
 
     jcls_AbstractPlugin = env->FindClass ("org/farmanager/api/AbstractPlugin");
-//    log ("| jcls_AbstractPlugin=", (int)jcls_AbstractPlugin);
-    if (jcls_AbstractPlugin == 0) return; // TODO
-    log (TEXT("| 2"));
+    if (jcls_AbstractPlugin == 0) {
+        log (TEXT("jcls_AbstractPlugin == 0"));
+        return;
+    }
+    jmethodID jmet_instance = env->GetStaticMethodID (jcls_AbstractPlugin, "instance", "()Lorg/farmanager/api/AbstractPlugin;");
+    if (jmet_instance == 0) {
+        log (TEXT("jmet_instance == 0"));
+        return;
+    }
+    jobj_Plugin = env->CallStaticObjectMethod (jcls_AbstractPlugin, jmet_instance);
+    if (jobj_Plugin == 0) {
+        log (TEXT("jobj_Plugin := 0"));
+        return;
+    }
+    jobj_PluginReference = env->NewGlobalRef(jobj_Plugin);
+    if (jobj_PluginReference == 0) {
+        log (TEXT("jobj_PluginReference := 0"));
+        return;
+    }
 
-    jcls_AbstractPluginInstance = env->FindClass ("org/farmanager/api/AbstractPluginInstance");
-//    log ("| jcls_AbstractPluginInstance=", (int)jcls_AbstractPluginInstance);
-    if (jcls_AbstractPluginInstance== 0) return; // TODO
-    log (TEXT("| 3"));
+    jmethodID jmid_setModuleName = env->GetMethodID (jcls_AbstractPlugin, "setModuleName", "(Ljava/lang/String;)V");
+    if (jmid_setModuleName == 0) {
+        log (TEXT("jmid_setModuleName := 0"));
+        return;
+    }
+    jstring jstr_ModuleName = env->NewString ((const jchar*) psi->ModuleName, _tcslen(psi->ModuleName));
+    env->CallVoidMethod (jobj_PluginReference, jmid_setModuleName, jstr_ModuleName);
 
 
-    jmethodID jmid_Constructor = env->GetMethodID (
-        jcls_Plugin, "<init>", "()V");
-//    log ("| jmid_Constructor=", (int)jmid_Constructor);
-
-//    log ("| NewObject jcls_Plugin");
-    jobject jobj_Plugin= env->NewObject (jcls_Plugin, jmid_Constructor);
-//    log ("| jobj_Plugin=", (int)jobj_Plugin);
-
-    plugin = env->NewGlobalRef(jobj_Plugin);
-//    log ("| plugin=", (int)plugin);
-
-
+    jcls_AbstractPluginInstance = env->FindClass("org/farmanager/api/AbstractPluginInstance");
+    if (jcls_AbstractPluginInstance == 0) {
+        log (TEXT("jcls_AbstractPluginInstance == 0"));
+        return;
+    }
 
     log (TEXT("| OK"));
 }
@@ -237,32 +243,61 @@ void WINAPI GetPluginInfoW(struct PluginInfo *Info)
 	Info->PluginMenu.Count=ARRAYSIZE(PluginMenuStrings);
 }
 
+
+/**
+ * An instance of this structure is allocated per every plugin instance.
+ * A pointer to this structure is used as plugin instance handle.
+ */
+struct PluginInstanceData
+{
+    /** Reference to a java counterpart - an instance of AbstractPluginInstance */
+    jobject instance;
+    //PanelMode panelModes[10];
+    //pchar* panelModeColumnTitles[10];
+    //KeyBarTitles keyBarTitles;
+    //InfoPanelLine* infoPanelLines;
+};
+
+
 /*
   Функция OpenPluginW вызывается при создании новой копии плагина.
 */
-HANDLE WINAPI OpenW(const struct OpenInfo *OInfo)
-{
-	const wchar_t *MsgItems[]=
-	{
-		GetMsg(MTitle),
-		GetMsg(MMessage1),
-		GetMsg(MMessage2),
-		GetMsg(MMessage3),
-		GetMsg(MMessage4),
-		L"\x01",                      /* separator line */
-		GetMsg(MButton),
-	};
+HANDLE WINAPI OpenW(const struct OpenInfo *OInfo) {
+//    if (initJavaResult != 0) return INVALID_HANDLE_VALUE; // TODO?
+    log (TEXT("> OpenPlugin"));
+    jmethodID jmid_AbstractPlugin_createInstance = env->GetMethodID (
+        jcls_AbstractPlugin, "createInstance", "()Lorg/farmanager/api/AbstractPluginInstance;");
+    if (jmid_AbstractPlugin_createInstance == 0) {
+        log (TEXT("jmid_AbstractPlugin_createInstance == 0"));
+        return 0;
+    }
+
+    jobj_PluginInstance = env->CallObjectMethod (jobj_Plugin, jmid_AbstractPlugin_createInstance);
+    if (jobj_PluginInstance == 0) {
+        log (TEXT("jobj_PluginInstance == 0"));
+        return 0;
+    }
+    jobj_PluginInstanceReference = env->NewGlobalRef(jobj_PluginInstance);
 
 
+    if (OInfo->OpenFrom == OPEN_COMMANDLINE) {
+//        jfieldID jfid_commandLine = env->GetFieldID (jcls_AbstractPluginInstance, "commandLine",   "Ljava/lang/String;");
+//        env->SetObjectField(jobj_PluginInstance, jfid_commandLine,
+//            env->NewStringUTF (reinterpret_cast<char*> (item))); // TODO: think of GC, etc...
+    }
 
+    // init() is called after all data from OInfo are passed to plugin instance.
+    jmethodID jmid_AbstractPluginInstance_init = env->GetMethodID (
+        jcls_AbstractPluginInstance, "init", "()V");
+    if (jmid_AbstractPluginInstance_init == 0) {
+        log (TEXT("jmid_AbstractPluginInstance_init == 0"));
+        return 0;
+    }
+    env->CallVoidMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_init);
 
-//	Info.Message(&MainGuid,           /* GUID */
-//		nullptr,
-//		FMSG_WARNING|FMSG_LEFTALIGN,  /* Flags */
-//		L"Contents",                  /* HelpTopic */
-//		MsgItems,                     /* Items */
-//		ARRAYSIZE(MsgItems),          /* ItemsNumber */
-//		1);                           /* ButtonsNumber */
+    PluginInstanceData* data = new PluginInstanceData;
+    data->instance = jobj_PluginInstance;
 
-	return nullptr;
+    log (TEXT("< OpenPlugin"));
+    return reinterpret_cast<HANDLE> (data);
 }
