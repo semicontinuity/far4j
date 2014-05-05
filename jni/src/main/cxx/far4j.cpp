@@ -754,3 +754,25 @@ intptr_t WINAPI DeleteFilesW(
     }
     return 1;
 }
+
+
+/**
+ * ProcessPanelInputW
+ */
+intptr_t WINAPI ProcessPanelInputW(
+  const struct ProcessPanelInputInfo *Info)
+{
+    PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
+    jobject jobj_PluginInstance = data->instance;
+
+    jmethodID jmid_AbstractPluginInstance_processKey = env->GetMethodID (
+        jcls_AbstractPluginInstance, "processKey", "(II)I");
+    if (jmid_AbstractPluginInstance_processKey == NULL) return FALSE; // TODO panic better
+
+    const WORD EventType = Info->Rec.EventType;
+    if (EventType != KEY_EVENT) return 0;
+    if (!Info->Rec.Event.KeyEvent.bKeyDown) return 0;
+
+    const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_processKey, (jint)Info->Rec.Event.KeyEvent.wVirtualKeyCode, (jint)Info->Rec.Event.KeyEvent.dwControlKeyState);
+    return result;
+}

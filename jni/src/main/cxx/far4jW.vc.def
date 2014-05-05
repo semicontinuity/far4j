@@ -11,3 +11,4 @@ EXPORTS
   GetOpenPanelInfoW
   MakeDirectoryW
   DeleteFilesW
+  ProcessPanelInputW
