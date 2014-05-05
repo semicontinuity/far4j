@@ -138,7 +138,9 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
         result.clear ();
         final int hScreen = AbstractPlugin.saveScreen ();
         AbstractPlugin.message (
-                0, null, new String[] {"Please wait","Executing query"}, 0);
+                0, null, new String[] {"Please wait","Executing query", query}, 0);
+//        AbstractPlugin.message (
+//                0, null, new String[] {"Please wait!","Executing query!"}, 0);
 
 
         try {

@@ -254,9 +254,7 @@ log ("| Problem 1!");
     log (TEXT("| OK"));
 }
 
-/*
-������� GetPluginInfoW ���������� ��� ��������� ���������� � �������
-*/
+
 void WINAPI GetPluginInfoW(struct PluginInfo *Info)
 {
 	Info->StructSize=sizeof(*Info);
@@ -300,7 +298,7 @@ struct PluginPanelItemData
 */
 HANDLE WINAPI OpenW(const struct OpenInfo *OInfo) {
 //    if (initJavaResult != 0) return INVALID_HANDLE_VALUE; // TODO?
-    log (TEXT("> OpenPlugin"));
+//    log (TEXT("> OpenPlugin"));
     jmethodID jmid_AbstractPlugin_createInstance = env->GetMethodID (
         jcls_AbstractPlugin, "createInstance", "()Lorg/farmanager/api/AbstractPluginInstance;");
     if (jmid_AbstractPlugin_createInstance == 0) {
@@ -334,7 +332,7 @@ HANDLE WINAPI OpenW(const struct OpenInfo *OInfo) {
     PluginInstanceData* data = new PluginInstanceData;
     data->instance = jobj_PluginInstance;
 
-    log (TEXT("< OpenPlugin"));
+//    log (TEXT("< OpenPlugin"));
     return reinterpret_cast<HANDLE> (data);
 }
 
@@ -805,16 +803,16 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_message
     const wchar_t* *items;
     if (jstr_Items != NULL) {
         const int l = env->GetArrayLength(jstr_Items);
-        const wchar_t* *items = new const wchar_t*[l];
+        items = new const wchar_t*[l];
             
         for (int j = 0; j < l; j++) {
             const jstring jstr_item = (jstring) env->GetObjectArrayElement(jstr_Items, j);
             items[j] = jstr_item == NULL ? NULL : (const _TCHAR*)env->GetStringChars (jstr_item, 0);
+            log(items[j]);
         }
     }
     else items = nullptr;
-
-    log (TEXT("| Message (TODO)"));
+    
 /*
     const intptr_t result = Info.Message(info.ModuleNumber,
         FMSG_ALLINONE|flags,
@@ -823,21 +821,17 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_message
         2, // ignored anyway
         buttonsNumber);
 */
-
     if (helpTopic != NULL) env->ReleaseStringChars (jstr_HelpTopic, (const jchar*)helpTopic);
-
     if (jstr_Items != NULL) {
         const int l = env->GetArrayLength(jstr_Items);
-            
         for (int j = 0; j < l; j++) {
             if (items[j] != nullptr) {
                 const jstring jstr_item = (jstring) env->GetObjectArrayElement(jstr_Items, j);
                 env->ReleaseStringChars (jstr_item, (const jchar*)items[j]);
             }
         }
+        delete[] items;
     }
-    delete[] items;
-
     return 0;
 }
 
@@ -872,5 +866,93 @@ JNIEXPORT void JNICALL Java_org_farmanager_api_AbstractPlugin_closePlugin
     Info.PanelControl(PANEL_ACTIVE, FCTL_CLOSEPANEL, NULL, NULL);
 }
 
+
+// ---------------------------------------------------------------------
+// helper
+
+struct InitDialogItem
+{
+  int Type;
+  int X1;
+  int Y1;
+  int X2;
+  int Y2;
+//  int Focus;
+  int Selected;
+  unsigned int Flags;
+//  int DefaultButton;
+  const wchar_t * const Data;
+};
+
+
+void InitDialogItems(
+       const struct InitDialogItem *Init,
+       struct FarDialogItem *Item,
+       int ItemsNumber
+)
+{
+  int I;
+  const struct InitDialogItem *PInit=Init;
+  struct FarDialogItem *PItem=Item;
+  for (I=0; I < ItemsNumber; I++,PItem++,PInit++)
+  {
+    PItem->Type=(FARDIALOGITEMTYPES)PInit->Type;
+    PItem->X1=PInit->X1;
+    PItem->Y1=PInit->Y1;
+    PItem->X2=PInit->X2;
+    PItem->Y2=PInit->Y2;
+//    PItem->Focus=PInit->Focus;
+    PItem->Selected=PInit->Selected;
+
+    PItem->History=nullptr;
+    PItem->Mask=nullptr;
+
+    PItem->Flags=(enum FARDIALOGITEMFLAGS)PInit->Flags;
+
+//    PItem->DefaultButton=PInit->DefaultButton;
+
+    if ((unsigned int)PInit->Data < 2000)
+      PItem->Data = GetMsg((unsigned int)PInit->Data);
+    else
+      PItem->Data = PInit->Data;
+  }
+}
+
+
+
+
+JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
+  (JNIEnv *env, jclass, jint x1, jint y1, jint x2, jint y2, jstring helpTopic, jobjectArray initDialogItems)
+{
+  struct InitDialogItem InitItems []={
+    DI_DOUBLEBOX,	3,1,72,8,	0,0,L"AAA",
+    DI_CHECKBOX,	5,2,0,0,	0,0,L"XXX",
+    DI_FIXEDIT,		7,3,7,3,	1,0,L"",
+    DI_TEXT,		9,3,0,0,	0,0,L"ZZZ",
+    DI_TEXT,		5,4,0,0,	0,DIF_BOXCOLOR|DIF_SEPARATOR,L"",
+    DI_CHECKBOX,	5,5,0,0,	0,0,L"WWW",
+    DI_TEXT,		5,6,0,0,	0,DIF_BOXCOLOR|DIF_SEPARATOR,L"",
+    DI_BUTTON,		0,7,0,0,	0,DIF_CENTERGROUP|DIF_DEFAULTBUTTON,L"OK",
+    DI_BUTTON,		0,7,0,0,	0,DIF_CENTERGROUP,L"CANCEL"
+  };
+  struct FarDialogItem DialogItems[sizeof(InitItems)/sizeof(InitItems[0])];
+  InitDialogItems(InitItems, DialogItems, sizeof(InitItems)/sizeof(InitItems[0]));
+
+    HANDLE h = Info.DialogInit(
+        &MainGuid,
+        &TestGuid,
+        -1,-1,76,10,
+        L"TempCfg",
+        DialogItems,
+        sizeof(DialogItems)/sizeof(DialogItems[0]),
+        0,
+        FDLG_NONE,
+        nullptr,
+        nullptr
+    );
+    jint result = (jint)Info.DialogRun(h);
+    Info.DialogFree(h);
+    return result;
+}
 
 }
