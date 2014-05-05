@@ -934,6 +934,253 @@ void InitDialogItems(
 
 
 
+
+
+INT_PTR WINAPI ShowDialogProc(HANDLE hDlg, intptr_t Msg, intptr_t Param1, void *Param2)
+{
+	return Info.DefDlgProc(hDlg, Msg, Param1, Param2);
+}
+
+
+enum CompareLng {
+	MNoLngStringDefined = -1,
+
+	MOK,
+	MCancel,
+	MYes,
+   MNo,  
+
+	MCompare,
+
+	MCmpTitle,
+	MProcessBox,
+	MProcessSubfolders,
+	MUseMaxScanDepth,
+	MProcessSelected,
+	MCompareBox,
+	MCompareTime,
+	MCompareLowPrecision,
+	MCompareIgnoreTimeZone,
+	MCompareSize,
+	MCompareContents,
+	MCompareContentsIgnore,
+	MCompareIgnoreNewLines,
+	MCompareIgnoreWhitespace,
+	MMessageWhenNoDiff,
+
+	MFilePanelsRequired,
+
+	MComparingFiles,
+
+	MNoDiffTitle,
+	MNoDiffBody,
+
+	MNoMemTitle,
+	MNoMemBody,
+
+	MEscTitle,
+	MEscBody,
+
+	MOpenErrorTitle,
+	MOpenErrorBody,
+};
+
+static bool ShowDialog(bool bPluginPanels, bool bSelectionPresent)
+{                           
+	static struct InitDialogItem
+	{
+		FARDIALOGITEMTYPES Type;
+		unsigned char X1, Y1, X2, Y2;
+		int           Data;
+		int           DefaultRegValue;
+		const wchar_t   *SelectedRegValue;
+		unsigned int  Flags;
+		int          *StoreTo;
+	} InitItems[] =
+	{
+		/* 0*/ { DI_DOUBLEBOX,    3,  1, 62, 20, MCmpTitle,                0, NULL,                                 0, NULL },
+		/* 1*/ { DI_TEXT,         5,  2,  0,  0, MProcessBox,              0, NULL,                                 0, NULL },
+		/* 2*/ { DI_CHECKBOX,     5,  3,  0,  0, MProcessSubfolders,       0, L"ProcessSubfolders",                 0, NULL},
+		/* 3*/ { DI_CHECKBOX,     9,  4,  0,  0, MUseMaxScanDepth,         0, L"UseMaxScanDepth",                   0, NULL},
+//		/* 4*/ { DI_FIXEDIT,      0,  4,  4,  0, MNoLngStringDefined,     99, L"MaxScanDepth",           DIF_MASKEDIT, NULL},
+		/* 5*/ { DI_CHECKBOX,     5,  5,  0,  0, MProcessSelected,         0, L"ProcessSelected",                   0, NULL},
+		/* 6*/ { DI_TEXT,         0,  6,  0,  0, MNoLngStringDefined,      0, NULL,                     DIF_SEPARATOR, NULL },
+		/* 7*/ { DI_TEXT,         5,  7,  0,  0, MCompareBox,              0, NULL,                                 0, NULL },
+		/* 8*/ { DI_CHECKBOX,     5,  8,  0,  0, MCompareTime,             1, L"CompareTime",                       0, NULL},
+		/* 9*/ { DI_CHECKBOX,     9,  9,  0,  0, MCompareLowPrecision,     1, L"LowPrecisionTime",                  0, NULL},
+		/*10*/ { DI_CHECKBOX,     9, 10,  0,  0, MCompareIgnoreTimeZone,   1, L"IgnorePossibleTimeZoneDifferences", 0, NULL},
+		/*11*/ { DI_CHECKBOX,     5, 11,  0,  0, MCompareSize,             1, L"CompareSize",                       0, NULL},
+		/*12*/ { DI_CHECKBOX,     5, 12,  0,  0, MCompareContents,         0, L"CompareContents",                   0, NULL},
+		/*13*/ { DI_CHECKBOX,     9, 13,  0,  0, MCompareContentsIgnore,   0, L"CompareContentsIgnore",             0, NULL},
+		/*14*/ { DI_RADIOBUTTON, 13, 14,  0,  0, MCompareIgnoreNewLines,   1, L"IgnoreNewLines",            DIF_GROUP, NULL},
+		/*15*/ { DI_RADIOBUTTON, 13, 15,  0,  0, MCompareIgnoreWhitespace, 0, L"IgnoreWhitespace",                  0, NULL},
+		/*16*/ { DI_TEXT,         0, 16,  0,  0, MNoLngStringDefined,      0, NULL,                     DIF_SEPARATOR, NULL },
+		/*17*/ { DI_CHECKBOX,     5, 17,  0,  0, MMessageWhenNoDiff,       0, L"MessageWhenNoDiff",                 0, NULL },
+		/*18*/ { DI_TEXT,         0, 18,  0,  0, MNoLngStringDefined,      0, NULL,                     DIF_SEPARATOR, NULL },
+		/*19*/ { DI_BUTTON,       0, 19,  0,  0, MOK,                      0, NULL,                   DIF_CENTERGROUP, NULL },
+		/*20*/ { DI_BUTTON,       0, 19,  0,  0, MCancel,                  0, NULL,                   DIF_CENTERGROUP, NULL }
+	};
+	struct FarDialogItem DialogItems[ARRAYSIZE(InitItems)];
+	wchar_t Mask[] = L"99999";
+	wchar_t tmpnum[ARRAYSIZE(InitItems)][32];
+	memset(DialogItems,0,sizeof(DialogItems));
+//	PluginSettings settings(MainGuid, Info.SettingsControl);
+	size_t DlgData=0;
+	bool bNoFocus = true;
+	size_t i;
+
+	for (i = 0; i < ARRAYSIZE(InitItems); i++)
+	{
+		DialogItems[i].Type           = InitItems[i].Type;
+		DialogItems[i].X1             = InitItems[i].X1;
+		DialogItems[i].Y1             = InitItems[i].Y1;
+		DialogItems[i].X2             = InitItems[i].X2;
+		DialogItems[i].Y2             = InitItems[i].Y2;
+		DialogItems[i].Flags          = InitItems[i].Flags;
+//		DialogItems[i].Data = (InitItems[i].Data == MNoLngStringDefined) ? L"" : GetMsg(InitItems[i].Data);
+		DialogItems[i].Data = L"OK";
+		int Value = InitItems[i].DefaultRegValue;
+
+		if (DialogItems[i].Type == DI_CHECKBOX || DialogItems[i].Type == DI_RADIOBUTTON)
+		{
+			DialogItems[i].Selected = Value;
+		}
+		else if (DialogItems[i].Type == DI_FIXEDIT)
+		{
+			DialogItems[i].Data = tmpnum[i];
+//			FSF.itoa(Value, (wchar_t *)DialogItems[i].Data, 10);
+			DialogItems[i].Mask = Mask;
+			DialogItems[i].X1 = DialogItems[i-1].X1 + lstrlen(DialogItems[i-1].Data) - (wcschr(DialogItems[i-1].Data, L'&')?1:0) + 5;
+			DialogItems[i].X2 += DialogItems[i].X1;
+		}
+
+		switch (InitItems[i].Data)
+		{
+			case MCompareContents:
+				DlgData += i;
+
+				if (bPluginPanels)
+				{
+					DialogItems[i].Flags |= DIF_DISABLE;
+					DialogItems[i].Selected = 0;
+				}
+
+				if (!DialogItems[i].Selected)
+				{
+					InitItems[i+1].Flags |= DIF_DISABLE;
+					InitItems[i+2].Flags |= DIF_DISABLE;
+					InitItems[i+3].Flags |= DIF_DISABLE;
+				}
+				else
+				{
+					InitItems[i+1].Flags &= ~DIF_DISABLE;
+					InitItems[i+2].Flags &= ~DIF_DISABLE;
+					InitItems[i+3].Flags &= ~DIF_DISABLE;
+				}
+
+				break;
+			case MCompareContentsIgnore:
+
+				if (!DialogItems[i].Selected || DialogItems[i].Flags & DIF_DISABLE)
+				{
+					InitItems[i+1].Flags |= DIF_DISABLE;
+					InitItems[i+2].Flags |= DIF_DISABLE;
+				}
+				else
+				{
+					InitItems[i+1].Flags &= ~DIF_DISABLE;
+					InitItems[i+2].Flags &= ~DIF_DISABLE;
+				}
+
+				break;
+			case MCompareIgnoreWhitespace:
+
+				if (DialogItems[i].Selected == DialogItems[i-1].Selected)
+				{
+					DialogItems[i-1].Selected = 1;
+					DialogItems[i].Selected = 0;
+				}
+
+				break;
+			case MProcessSubfolders:
+				DlgData += i<<8;
+
+				if (bPluginPanels)
+				{
+					DialogItems[i].Flags |= DIF_DISABLE;
+					DialogItems[i].Selected = 0;
+				}
+
+				if (!DialogItems[i].Selected)
+				{
+					InitItems[i+1].Flags |= DIF_DISABLE;
+					InitItems[i+2].Flags |= DIF_DISABLE;
+				}
+				else
+				{
+					InitItems[i+1].Flags &= ~DIF_DISABLE;
+					InitItems[i+2].Flags &= ~DIF_DISABLE;
+				}
+
+				break;
+			case MProcessSelected:
+
+				if (!bSelectionPresent)
+				{
+					DialogItems[i].Flags |= DIF_DISABLE;
+					DialogItems[i].Selected = 0;
+				}
+
+				break;
+			case MCompareTime:
+				DlgData += i<<16;
+
+				if (!DialogItems[i].Selected)
+				{
+					InitItems[i+1].Flags |= DIF_DISABLE;
+					InitItems[i+2].Flags |= DIF_DISABLE;
+				}
+				else
+				{
+					InitItems[i+1].Flags &= ~DIF_DISABLE;
+					InitItems[i+2].Flags &= ~DIF_DISABLE;
+				}
+
+				break;
+			case MOK:
+				DialogItems[i].Flags |= DIF_DEFAULTBUTTON;
+				break;
+		}
+
+		if (bNoFocus && DialogItems[i].Type == DI_CHECKBOX && !(DialogItems[i].Flags & DIF_DISABLE))
+		{
+			DialogItems[i].Flags |= DIF_FOCUS;
+			bNoFocus = false;
+		}
+	}
+
+	HANDLE hDlg = Info.DialogInit(&MainGuid, &DialogGuid, -1, -1, 66, 22, L"Contents",
+	                              DialogItems, ARRAYSIZE(DialogItems), 0, 0,
+	                              ShowDialogProc, (void *)DlgData);
+
+	if (hDlg == INVALID_HANDLE_VALUE)
+		return false;
+
+	intptr_t ExitCode = Info.DialogRun(hDlg);
+
+	Info.DialogFree(hDlg);
+	return false;
+}
+
+
+JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
+  (JNIEnv *env, jclass, jint x1, jint y1, jint x2, jint y2, jstring helpTopic, jobjectArray initDialogItems)
+{
+    ShowDialog(0,0);
+    return -1;
+}
+
+/*
 JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
   (JNIEnv *env, jclass, jint x1, jint y1, jint x2, jint y2, jstring helpTopic, jobjectArray initDialogItems)
 {
@@ -945,7 +1192,7 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
     DI_TEXT,		5,4,0,0,	0,DIF_BOXCOLOR|DIF_SEPARATOR,L"",
     DI_CHECKBOX,	5,5,0,0,	0,0,L"WWW",
     DI_TEXT,		5,6,0,0,	0,DIF_BOXCOLOR|DIF_SEPARATOR,L"",
-    DI_BUTTON,		0,7,0,0,	0,DIF_CENTERGROUP|DIF_DEFAULTBUTTON,L"OK",
+    DI_BUTTON,		0,7,0,0,	0,DIF_CENTERGROUP|DIF_DEFAULTBUTTON,L"OK", 
     DI_BUTTON,		0,7,0,0,	0,DIF_CENTERGROUP,L"CANCEL"
   };
   struct FarDialogItem DialogItems[sizeof(InitItems)/sizeof(InitItems[0])];
@@ -954,18 +1201,18 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
     HANDLE h = Info.DialogInit(
         &MainGuid,
         &TestGuid,
-        -1,-1,76,10,
-        L"TempCfg",
+        10,10,76,20,
+        nullptr,
         DialogItems,
         sizeof(DialogItems)/sizeof(DialogItems[0]),
         0,
         FDLG_NONE,
-        nullptr,
+        Info.DefDlgProc,
         nullptr
     );
     jint result = (jint)Info.DialogRun(h);
     Info.DialogFree(h);
     return result;
 }
-
+*/
 }
