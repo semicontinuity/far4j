@@ -758,20 +758,33 @@ intptr_t WINAPI DeleteFilesW(
  * ProcessPanelInputW
  */
 intptr_t WINAPI ProcessPanelInputW(
-  const struct ProcessPanelInputInfo *Info)
+    const struct ProcessPanelInputInfo *Info)
 {
     PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
     jobject jobj_PluginInstance = data->instance;
 
     jmethodID jmid_AbstractPluginInstance_processKey = env->GetMethodID (
         jcls_AbstractPluginInstance, "processKey", "(II)I");
-    if (jmid_AbstractPluginInstance_processKey == NULL) return FALSE; // TODO panic better
+    if (jmid_AbstractPluginInstance_processKey== 0) {
+        log (TEXT("jmid_AbstractPluginInstance_processKey := 0"));
+        return 0;
+    }
+
+    jmethodID jmid_AbstractPluginInstance_processEvent = env->GetMethodID (
+        jcls_AbstractPluginInstance, "processEvent", "(IIII)I");
+    if (jmid_AbstractPluginInstance_processEvent== 0) {
+        log (TEXT("jmid_AbstractPluginInstance_processEvent:= 0"));
+        return 0;
+    }
 
     const WORD EventType = Info->Rec.EventType;
     if (EventType != KEY_EVENT) return 0;
-    if (!Info->Rec.Event.KeyEvent.bKeyDown) return 0;
+    if (Info->Rec.Event.KeyEvent.bKeyDown != TRUE) return 0;
 
-    const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_processKey, (jint)Info->Rec.Event.KeyEvent.wVirtualKeyCode, (jint)Info->Rec.Event.KeyEvent.dwControlKeyState);
+//    const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_processKey, (jint)Info->Rec.Event.KeyEvent.wVirtualKeyCode, (jint)Info->Rec.Event.KeyEvent.dwControlKeyState);
+    const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_processEvent, EventType,
+        Info->Rec.Event.KeyEvent.bKeyDown,
+        (jint)Info->Rec.Event.KeyEvent.wVirtualKeyCode, (jint)Info->Rec.Event.KeyEvent.dwControlKeyState);
     return result;
 }
 

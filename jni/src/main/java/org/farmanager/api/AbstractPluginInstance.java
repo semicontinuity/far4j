@@ -257,4 +257,11 @@ public abstract class AbstractPluginInstance
         // standard FAR key processing by default
         return 0;
     }
+
+
+    public int processEvent(int i1, int i2, int key, int controlState) {
+        // do nothing by default
+        return 0;
+    }
+
 }

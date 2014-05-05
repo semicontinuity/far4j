@@ -137,12 +137,8 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
     {
         result.clear ();
         final int hScreen = AbstractPlugin.saveScreen ();
-        AbstractPlugin.message (
-                0, null, new String[] {"Please wait","Executing query", query}, 0);
 //        AbstractPlugin.message (
-//                0, null, new String[] {"Please wait!","Executing query!"}, 0);
-
-
+//                0, null, new String[] {"Please wait","Executing query", query}, 0);
         try {
             Connection conn = DriverManager.getConnection (url);
             LOGGER.debug("Connection to " + url + " established");
@@ -274,8 +270,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
         }
     }
 
-    public int processKey (int key, int controlState)
-    {
+    public int processKey (int key, int controlState) {
         int realKey = ProcessKeyFlags.clearedPreprocess (key);
         if (shift (controlState) && realKey == VK_F4)
         {
