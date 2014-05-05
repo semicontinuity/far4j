@@ -11,7 +11,7 @@ public class Messages {
      */
     public static void shortMessage(String m) {
         final int hScreen = AbstractPlugin.saveScreen();
-        AbstractPlugin.message(0, null, "Please wait\n" + m, 0);
+        AbstractPlugin.message(0, null, new String[] {"Please wait", m}, 0);
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {

@@ -138,7 +138,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
         result.clear ();
         final int hScreen = AbstractPlugin.saveScreen ();
         AbstractPlugin.message (
-                0, null, "Please wait\nExecuting query", 0);
+                0, null, new String[] {"Please wait","Executing query"}, 0);
 
 
         try {
@@ -177,7 +177,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
                 //LOGGER.info("Set name: " + pluginPanelItem.cFileName);
 
                 items.add (pluginPanelItem);
-                result.put (new Integer(id), pluginPanelItem.customColumns);
+                result.put (id, pluginPanelItem.customColumns);
             }
 
             final PluginPanelItem[] pluginPanelItems = new PluginPanelItem[items.size ()];
@@ -421,19 +421,16 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
     }
 
 
-    private void executeUpdate(String query)
-    {
+    private void executeUpdate(String query) {
         LOGGER.info("Executing query " + query);
-        try
-        {
+        try {
             Connection conn = DriverManager.getConnection (url);
             Statement stmt = conn.createStatement ();
             stmt.executeUpdate (query);
             stmt.close ();
             conn.close ();
         }
-        catch (SQLException e)
-        {
+        catch (SQLException e) {
             Messages.shortMessage (e.toString ());
             LOGGER.error (e, e);
         }

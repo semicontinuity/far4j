@@ -776,3 +776,101 @@ intptr_t WINAPI ProcessPanelInputW(
     const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_processKey, (jint)Info->Rec.Event.KeyEvent.wVirtualKeyCode, (jint)Info->Rec.Event.KeyEvent.dwControlKeyState);
     return result;
 }
+
+
+// =============================================================================================
+// Methods called from Java side
+// =============================================================================================
+
+extern "C" {
+
+JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_saveScreen
+  (JNIEnv *env, jclass, jint x1, jint y1, jint x2, jint y2)
+{
+    return (jint)Info.SaveScreen(x1, y1, x2, y2);
+}
+
+
+JNIEXPORT void JNICALL Java_org_farmanager_api_AbstractPlugin_restoreScreen
+  (JNIEnv *, jclass, jint hScreen)
+{
+    Info.RestoreScreen((HANDLE)hScreen);
+}
+
+
+JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_message
+  (JNIEnv* env, jclass, jint flags, jstring jstr_HelpTopic, jobjectArray jstr_Items, jint buttonsNumber)
+{
+    const wchar_t* helpTopic = jstr_HelpTopic == NULL ? NULL : (const wchar_t*) env->GetStringChars (jstr_HelpTopic, 0);
+    const wchar_t* *items;
+    if (jstr_Items != NULL) {
+        const int l = env->GetArrayLength(jstr_Items);
+        const wchar_t* *items = new const wchar_t*[l];
+            
+        for (int j = 0; j < l; j++) {
+            const jstring jstr_item = (jstring) env->GetObjectArrayElement(jstr_Items, j);
+            items[j] = jstr_item == NULL ? NULL : (const _TCHAR*)env->GetStringChars (jstr_item, 0);
+        }
+    }
+    else items = nullptr;
+
+    log (TEXT("| Message (TODO)"));
+/*
+    const intptr_t result = Info.Message(info.ModuleNumber,
+        FMSG_ALLINONE|flags,
+        "HelpTopic",
+        (const char * const *)items,
+        2, // ignored anyway
+        buttonsNumber);
+*/
+
+    if (helpTopic != NULL) env->ReleaseStringChars (jstr_HelpTopic, (const jchar*)helpTopic);
+
+    if (jstr_Items != NULL) {
+        const int l = env->GetArrayLength(jstr_Items);
+            
+        for (int j = 0; j < l; j++) {
+            if (items[j] != nullptr) {
+                const jstring jstr_item = (jstring) env->GetObjectArrayElement(jstr_Items, j);
+                env->ReleaseStringChars (jstr_item, (const jchar*)items[j]);
+            }
+        }
+    }
+    delete[] items;
+
+    return 0;
+}
+
+
+JNIEXPORT jstring JNICALL Java_org_farmanager_api_AbstractPlugin_getAnotherPanelDirectory(JNIEnv *, jclass)
+{
+    size_t Size = Info.PanelControl(PANEL_ACTIVE, FCTL_GETPANELDIRECTORY, 0, nullptr);
+    FarPanelDirectory* dir = static_cast<FarPanelDirectory*>(malloc(Size));
+    dir->StructSize = sizeof(FarPanelDirectory);
+    Info.PanelControl(PANEL_PASSIVE, FCTL_GETPANELDIRECTORY, Size, dir);
+    jstring result = env->NewString((const jchar*)dir->Name, _tcslen(dir->Name));
+    free(dir);
+    return result;
+}
+
+
+JNIEXPORT void JNICALL Java_org_farmanager_api_AbstractPlugin_updatePanel
+  (JNIEnv *, jclass)
+{
+    Info.PanelControl(PANEL_ACTIVE, FCTL_UPDATEPANEL, 1, NULL);
+}
+
+JNIEXPORT void JNICALL Java_org_farmanager_api_AbstractPlugin_redrawPanel
+  (JNIEnv *, jclass)
+{
+    Info.PanelControl(PANEL_ACTIVE, FCTL_REDRAWPANEL, NULL, NULL);
+}
+
+JNIEXPORT void JNICALL Java_org_farmanager_api_AbstractPlugin_closePlugin
+  (JNIEnv *, jclass)
+{
+    Info.PanelControl(PANEL_ACTIVE, FCTL_CLOSEPANEL, NULL, NULL);
+}
+
+
+}

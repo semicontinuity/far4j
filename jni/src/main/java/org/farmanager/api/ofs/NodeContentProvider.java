@@ -92,7 +92,7 @@ public class NodeContentProvider extends AbstractPanelContentProvider
     public PluginPanelItem[] getFindData (final int opMode)
     {
         final int hScreen = AbstractPlugin.saveScreen ();
-        AbstractPlugin.message (0, null, "Please wait\nReading node content", 0);
+        AbstractPlugin.message (0, null, new String[] {"Please wait", "Reading node content"}, 0);
 
         FarPresentationAttributes presentation = (FarPresentationAttributes) node;
         if (presentation == null) return null;
@@ -191,7 +191,7 @@ public class NodeContentProvider extends AbstractPanelContentProvider
             }
         }
 
-        PanelMode[] panelModes = new PanelMode[10];
+        final PanelMode[] panelModes = new PanelMode[10];
         for (int i = 0; i < 10; i++)
         {
             List<MethodMappedColumnDescriptor> list = map.get (i);

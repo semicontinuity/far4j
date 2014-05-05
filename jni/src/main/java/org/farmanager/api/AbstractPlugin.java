@@ -244,10 +244,8 @@ public abstract class AbstractPlugin
 
     }
 
-    public static /*native */int message (
-        final int flags, final String helpTopic, final String items, final int buttonsNumber) {
-        return 0;
-    }
+    public static native int message (
+        final int flags, final String helpTopic, final String[] items, final int buttonsNumber);
 
 
     /**
