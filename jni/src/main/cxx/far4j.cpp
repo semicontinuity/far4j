@@ -706,3 +706,51 @@ void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
 
     // ...
 }
+
+
+/**
+ * The MakeDirectory function is called to create a new directory in the file system emulated by the plugin.
+ * @return If the function succeeds, the return value must be 1.
+ *         If the function fails, 0 should be returned.
+ *         If the function was interrupted by the user, it should return -1.
+ */
+intptr_t WINAPI MakeDirectoryW(
+    struct MakeDirectoryInfo *Info)
+{
+    const PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
+    jobject jobj_PluginInstance = data->instance;
+
+    const jmethodID jmid_AbstractPluginInstance_makeDirectory = env->GetMethodID (
+        jcls_AbstractPluginInstance, "makeDirectory", "(Ljava/lang/String;I)I");    
+    if (jmid_AbstractPluginInstance_makeDirectory == NULL) return 0; // TODO panic better
+
+    const jstring jstr_name = env->NewString ((const jchar*)Info->Name, _tcslen(Info->Name)); // TODO: think of GC, etc...
+    const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_makeDirectory, jstr_name, (jint)Info->OpMode);
+
+    return result;
+}
+
+
+/**
+ * DeleteFiles
+ */
+intptr_t WINAPI DeleteFilesW(
+    const struct DeleteFilesInfo *Info)
+{
+    PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
+    jobject jobj_PluginInstance = data->instance;
+
+    // assume that itemsNumber>0, items!=NULL
+    const jmethodID jmid_AbstractPluginInstance_deleteFile = env->GetMethodID(
+        jcls_AbstractPluginInstance, "deleteFile", "(Ljava/lang/String;I)I");
+    if (jmid_AbstractPluginInstance_deleteFile == NULL) return 0; // TODO panic better
+
+    const jint jint_opMode = Info->OpMode;
+
+    for (int i = 0; i < Info->ItemsNumber; i++) {
+        const jstring jstr_cFileName = env->NewString ((const jchar*)Info->PanelItem[i].FileName, _tcslen(Info->PanelItem[i].FileName)); // TODO: think of GC, etc...
+        const jint result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_deleteFile, jstr_cFileName, jint_opMode);
+        if (result != 1) return result; // TODO: not all files deleted?
+    }
+    return 1;
+}

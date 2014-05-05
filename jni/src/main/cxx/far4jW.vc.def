@@ -9,3 +9,5 @@ EXPORTS
   FreeFindDataW
   SetDirectoryW
   GetOpenPanelInfoW
+  MakeDirectoryW
+  DeleteFilesW
