@@ -236,13 +236,9 @@ public abstract class AbstractPlugin
      * All handles allocated by saveScreen must be passed to restoreScreen
      * to avoid memory leaks.
      */
-    public static /*native */int saveScreen(final int x1, final int y1, final int x2, final int y2) {
-        return 0;
-    }
+    public static native int saveScreen(final int x1, final int y1, final int x2, final int y2);
 
-    public static /*native */void restoreScreen(final int hScreen) {
-
-    }
+    public static native void restoreScreen(final int hScreen);
 
     public static native int message (
         final int flags, final String helpTopic, final String[] items, final int buttonsNumber);
