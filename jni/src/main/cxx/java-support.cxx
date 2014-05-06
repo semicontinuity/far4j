@@ -92,7 +92,7 @@ GetStringFromRegistry(HKEY key, LPCTSTR name, LPBYTE buf, jint bufsize)
 static jboolean
 GetPublicJREHome(_TCHAR *buf, jint bufsize)
 {
-    log(TEXT("> GetPublicJREHome"));
+//    log(TEXT("> GetPublicJREHome"));
     HKEY key, subkey;
     _TCHAR version[MAXPATHLEN];
 
@@ -142,7 +142,7 @@ GetPublicJREHome(_TCHAR *buf, jint bufsize)
 
     RegCloseKey(key);
     RegCloseKey(subkey);
-    log(TEXT("< GetPublicJREHome"));
+//    log(TEXT("< GetPublicJREHome"));
     return JNI_TRUE;
 }
 
@@ -174,7 +174,7 @@ GetJREPath(_TCHAR *path, jint pathsize)
 //    _TCHAR javadll[MAX_PATH];
 //    struct stat s;
 
-    log(TEXT("> GetJREPath"));
+//    log(TEXT("> GetJREPath"));
 /*
     if (GetApplicationHome(path, pathsize)) {
 	// Is JRE co-located with the application?
@@ -201,7 +201,7 @@ GetJREPath(_TCHAR *path, jint pathsize)
 
  found:
 //    if (debug) printf("JRE path is %s\n", path);
-    log(TEXT("< GetJREPath"));
+//    log(TEXT("< GetJREPath"));
     return JNI_TRUE;
 }
 
@@ -433,11 +433,6 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
     free(options);
     return r == JNI_OK;
 }
-
-
-
-
-
 
 int initializeJava ()
 {

@@ -168,8 +168,18 @@ void WINAPI SetStartupInfoW(const struct PluginStartupInfo *psi)
 //    log(classPath);
     SetClassPath(classPath);
 
+    _TCHAR jrepath[MAXPATHLEN];
+    /* Find out where the JRE is that we will be using. */
+    if (!GetJREPath(jrepath, sizeof(jrepath))) {
+        log(TEXT("Could not find JRE path in registry\n"));
+        return;
+    }
+
+    _tcscat(jrepath, TEXT("\\bin\\server\\jvm.dll"));
+
 // sorry, hardcoded for a while
-    if (!LoadJavaVM(TEXT("C:\\Program Files\\Java\\jdk1.7.0_45\\jre\\bin\\server\\jvm.dll"), &ifn)) {
+//    if (!LoadJavaVM(TEXT("C:\\Program Files\\Java\\jdk1.7.0_45\\jre\\bin\\server\\jvm.dll"), &ifn)) {
+    if (!LoadJavaVM(jrepath, &ifn)) {
 //    if (!LoadJavaVM(TEXT("C:\\Program Files\\Java\\jdk1.7.0_45\\jre\\bin\\java.dll"), &ifn)) {
 //        status = 1;
         log (TEXT("| Problem 6!"));
