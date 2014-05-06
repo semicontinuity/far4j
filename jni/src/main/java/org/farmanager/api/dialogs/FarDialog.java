@@ -53,15 +53,9 @@ public class FarDialog extends FarComponent {
             LOGGER.info("item.getData()=" + item.getData());
             initDialogItems[i] = new InitDialogItem(
                 item.getType(),
-                item.x1,
-                item.y1,
-                item.x2,
-                item.y2,
-                item.isFocused() ? 1 : 0,
-                item.isSelected() ? 1 : 0,
-                item.getFlags(),
-                0,
-                item.getData()
+                    item.x1, item.y1, item.x2, item.y2, item.isSelected() ? 1 : 0,
+                    item.getFlags(),
+                    item.getData()
                 );
             // TODO: bad
             if (item instanceof FarListControl)

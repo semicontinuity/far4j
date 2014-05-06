@@ -971,6 +971,128 @@ static bool ShowDialog1(bool bPluginPanels, bool bSelectionPresent)
 JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
   (JNIEnv *env, jclass, jint x1, jint y1, jint x2, jint y2, jstring helpTopic, jobjectArray initDialogItems)
 {
+    if (initDialogItems == 0) return -1;  // TODO: this is an exceptional case, handle (or handle in java?)
+    int length = env->GetArrayLength (initDialogItems);
+
+    if (length > 0)
+    {
+        jclass jcls_InitDialogItem = env->FindClass ("org/farmanager/api/InitDialogItem");
+        //log ("| jcls_InitDialogItem=", (int)jcls_InitDialogItem);
+
+        jfieldID fid_type          = env->GetFieldID (jcls_InitDialogItem, "type", "I");
+        jfieldID fid_x1            = env->GetFieldID (jcls_InitDialogItem, "x1", "I");
+        jfieldID fid_y1            = env->GetFieldID (jcls_InitDialogItem, "y1", "I");
+        jfieldID fid_x2            = env->GetFieldID (jcls_InitDialogItem, "x2", "I");
+        jfieldID fid_y2            = env->GetFieldID (jcls_InitDialogItem, "y2", "I");
+        jfieldID fid_selected      = env->GetFieldID (jcls_InitDialogItem, "selected", "I");
+        jfieldID fid_flags         = env->GetFieldID (jcls_InitDialogItem, "flags", "I");
+        jfieldID fid_data          = env->GetFieldID (jcls_InitDialogItem, "data", "Ljava/lang/String;");
+        jfieldID fid_param          = env->GetFieldID (jcls_InitDialogItem, "param", "Ljava/lang/Object;");
+
+        struct FarDialogItem* initItems = new FarDialogItem[length];
+        for (int i=0; i < length; i++)
+        {        
+            const jobject element = env->GetObjectArrayElement (initDialogItems, i);
+            //log ("element: ", (int)element);
+
+            // InitDialogItem.Type
+            // -----------------------------------------------------------------------------------     
+            const jint j_type = env->GetIntField (element, fid_type);
+            initItems[i].Type = (FARDIALOGITEMTYPES)j_type;
+            //log ("type: ", (int)j_type);
+
+            // InitDialogItem.X1
+            // -----------------------------------------------------------------------------------     
+            jint j_x1 = env->GetIntField (element, fid_x1);
+            initItems[i].X1 = j_x1;
+
+            // InitDialogItem.Y1
+            // -----------------------------------------------------------------------------------     
+            jint j_y1 = env->GetIntField (element, fid_y1);
+            initItems[i].Y1 = j_y1;
+
+            // InitDialogItem.X2
+            // -----------------------------------------------------------------------------------     
+            jint j_x2 = env->GetIntField (element, fid_x2);
+            initItems[i].X2 = j_x2;
+
+            // InitDialogItem.Y2
+            // -----------------------------------------------------------------------------------     
+            jint j_y2 = env->GetIntField (element, fid_y2);
+            initItems[i].Y2 = j_y2;
+
+            // InitDialogItem.Flags
+            // -----------------------------------------------------------------------------------     
+            jint j_flags = env->GetIntField (element, fid_flags);
+            initItems[i].Flags = j_flags;
+
+            // InitDialogItem.Data
+            // -----------------------------------------------------------------------------------
+            jstring j_data = (jstring) env->GetObjectField (element, fid_data);
+            const wchar_t* data = (const wchar_t*)env->GetStringChars (j_data, 0);  // TODO: garbage collection???
+            //log ("DATA=", data);
+            initItems[i].Data = data;
+
+            // InitDialogItem.Param
+            // -----------------------------------------------------------------------------------
+            if (j_type == DI_COMBOBOX || j_type == DI_LISTBOX)
+            {
+                jobject j_param = env->GetObjectField (element, fid_param);
+                if (j_param != NULL)
+                {
+                    FarList* listItems = new FarList;
+                    //log ("Allocated FarList", (int)listItems);
+                    
+                    // j_param has type FarListItem[]
+                    jobjectArray j_listItems = (jobjectArray)j_param;
+                    int listItemsNumber = env->GetArrayLength (j_listItems);
+                     
+                    listItems->ItemsNumber = listItemsNumber;
+                    listItems->Items = new FarListItem[listItemsNumber];
+                    //log ("Allocated items", (int)listItems->Items);
+
+
+                    memset(listItems->Items, 0, sizeof(FarListItem)*listItemsNumber);
+                    jclass jcls_FLI = env->FindClass ("org/farmanager/api/jni/FarListItem");
+                    jfieldID fidFLIText   = env->GetFieldID (jcls_FLI,  "text", "Ljava/lang/String;");
+                    jfieldID fidFLIFlags = env->GetFieldID (jcls_FLI,  "flags", "I");
+
+                    for (int itemNumber = 0; itemNumber < listItemsNumber; itemNumber++)
+                    {
+                       jobject j_fli = env->GetObjectArrayElement (j_listItems, itemNumber);
+                       //log ("far list item: ", (int)j_fli);
+
+                       // FarListItem.Text
+                       // -----------------------------------------------------------------------------------     
+                       jstring j_fli_text = (jstring) env->GetObjectField (j_fli, fidFLIText);
+                       const wchar_t* fli_text = (const wchar_t*)env->GetStringUTFChars (j_fli_text, 0);
+                       //strcpy (listItems->Items[itemNumber].Text, fli_text);
+                       //env->ReleaseStringUTFChars (j_fli_text, fli_text);
+                       listItems->Items[itemNumber].Text = fli_text;
+
+                       // FarListItem.Flags
+                       // -----------------------------------------------------------------------------------     
+                       jint j_fli_flags = env->GetIntField (j_fli, fidFLIFlags);
+                       listItems->Items[itemNumber].Flags = j_fli_flags;
+
+                       // FarListItem.Reserved
+                       // -----------------------------------------------------------------------------------     
+                       listItems->Items[itemNumber].Reserved[0] = 0;
+                       listItems->Items[itemNumber].Reserved[1] = 0;
+                    }
+                    initItems[i].ListItems = listItems;
+                }
+            }
+            else /* assume checkbox, radiobutton.. */
+            {
+                // InitDialogItem.Selected
+                // -----------------------------------------------------------------------------------     
+                jint j_selected = env->GetIntField (element, fid_selected);
+                initItems[i].Selected = j_selected;
+            }
+
+        }
+    }
     ShowDialog1(0,0);
     return -1;
 }
