@@ -859,6 +859,15 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_message
 }
 
 
+// FCTL_GETPANELINFO --> CurrentItem
+JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_getCurrentItem(JNIEnv *, jclass)
+{
+    struct PanelInfo panelInfo;
+    if (Info.PanelControl(PANEL_ACTIVE, FCTL_GETPANELINFO, 0, &panelInfo) == FALSE) return -1;
+
+    return panelInfo.CurrentItem;
+}
+
 JNIEXPORT jstring JNICALL Java_org_farmanager_api_AbstractPlugin_getAnotherPanelDirectory(JNIEnv *, jclass)
 {
     size_t Size = Info.PanelControl(PANEL_ACTIVE, FCTL_GETPANELDIRECTORY, 0, nullptr);

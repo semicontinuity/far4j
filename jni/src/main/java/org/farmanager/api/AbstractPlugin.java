@@ -284,6 +284,8 @@ public abstract class AbstractPlugin
     
     public static native String[] getSelectedItems ();
 
+    public static native int getCurrentItem ();
+
     public static native String getAnotherPanelDirectory ();
 
     public static native String getCommandLine ();

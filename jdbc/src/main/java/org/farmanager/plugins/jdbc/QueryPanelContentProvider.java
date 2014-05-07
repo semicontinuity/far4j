@@ -13,6 +13,7 @@ import static org.farmanager.api.jni.KeyCodes.*;
 import org.farmanager.api.jni.PanelColumnType;
 import org.farmanager.api.jni.ProcessKeyFlags;
 
+import static org.farmanager.api.jni.ProcessKeyFlags.alt;
 import static org.farmanager.api.jni.ProcessKeyFlags.noFlags;
 import static org.farmanager.api.jni.ProcessKeyFlags.shift;
 
@@ -184,19 +185,37 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     }
 
 
+    private List<String[]> executeQuery(final String query, final int columnCount) throws SQLException {
+        final Connection conn = DriverManager.getConnection(url);
+        LOGGER.debug("Connection to " + url + " established");
+        final Statement stmt = conn.createStatement();
+        LOGGER.debug("Executing query " + '"' + query + '"');
+        LOGGER.debug("Column count: " + columnCount);
+        final ResultSet rs = stmt.executeQuery(query);
+
+        final ArrayList<String[]> items = new ArrayList<String[]>();
+        while (rs.next()) {
+            final String[] pluginPanelItem = new String[columnCount];
+            for (int i = 0; i < columnCount; i++) {
+                final String value = String.valueOf(rs.getObject(i + 1));
+                pluginPanelItem[i] = presentation(i, value);
+            }
+            items.add(pluginPanelItem);
+        }
+        return items;
+    }
+
+
     private String presentation(final int i, final String s) {
-        if (columnPadding(properties, i)) {
+        if (columnHasPadding(properties, i)) {
             return pad(s, columnWidth(properties, i));
         } else {
             return s;
         }
     }
 
-    private static boolean columnPadding(final Properties properties, final int i) {
-//        LOGGER.info("Checking for padding " + i);
-        boolean b = properties.getProperty("column." + i + ".padding") != null;
-//        LOGGER.info("padding " + b);
-        return b;
+    private static boolean columnHasPadding(final Properties properties, final int i) {
+        return properties.getProperty("column." + i + ".padding") != null;
     }
 
     private static PanelColumnType columnType(final int i) {
@@ -254,15 +273,16 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         if (shift(controlState) && realKey == VK_F4) {
             return handleInsert();
         }
-        if (noFlags(controlState) && realKey == VK_F4) {
+        else if (noFlags(controlState) && realKey == VK_F4) {
             return handleUpdate();
         }
-        if (noFlags(controlState) && realKey == VK_F8) {
+        else if (noFlags(controlState) && realKey == VK_F8) {
             return handleDelete();
         }
-        if (shift(controlState) && realKey == VK_F2) {
+        else if (shift(controlState) && realKey == VK_F2) {
             return handleExport();
-        } else {
+        }
+        else {
             return 0;
         }
     }
