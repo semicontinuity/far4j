@@ -6,6 +6,8 @@ import org.farmanager.api.PanelMode;
 import static org.farmanager.api.PanelModeId.BRIEF;
 import org.farmanager.api.PluginPanelItem;
 import static org.farmanager.api.jni.PanelColumnType.ID;
+
+import org.farmanager.api.messages.Messages;
 import org.farmanager.api.panels.NamedColumnDescriptor;
 
 import java.io.File;
@@ -116,7 +118,7 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
             }
         }
         catch (Exception e) {
-            LOGGER.error (e, e);
+            Messages.showException(e);
         }
         catch (NoClassDefFoundError x) {
             LOGGER.fatal (x, x);

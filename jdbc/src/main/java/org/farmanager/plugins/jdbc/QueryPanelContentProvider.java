@@ -65,12 +65,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     public void init(final Properties properties) {
         this.properties = properties;
 
-        try {
-            Class.forName(properties.getProperty("driver"));
-        } catch (ClassNotFoundException e) {
-            // TODO
-            Messages.showException(e);
-        }
+        loadDriver(properties.getProperty("driver"));
 
         query = properties.getProperty("query");
         url = properties.getProperty("url");
@@ -78,6 +73,14 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         columnCount = Integer.parseInt(properties.getProperty("column.count"));
         initPanelModes(properties);
         initDefaults(properties);
+    }
+
+    private static void loadDriver(final String driverClass) {
+        try {
+            Class.forName(driverClass);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Could not load JDBC driver class " + driverClass);
+        }
     }
 
     private void initDefaults(final Properties properties) {
@@ -378,7 +381,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
             stmt.close();
             conn.close();
         } catch (SQLException e) {
-            Messages.shortMessage(e.toString());
+            Messages.longOperation(e.toString());
             LOGGER.error(e, e);
         }
         AbstractPlugin.updatePanel();
@@ -438,7 +441,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
                     false
             );
         } catch (SQLException e) {
-            Messages.shortMessage(e.toString());
+            Messages.longOperation(e.toString());
             LOGGER.error(e, e);
         }
     }
