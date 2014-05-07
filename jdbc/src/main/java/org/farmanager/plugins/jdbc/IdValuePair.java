@@ -1,25 +1,21 @@
 package org.farmanager.plugins.jdbc;
 
-public class IdValuePair
-{
+public class IdValuePair {
     private final int id;
     private final String value;
 
 
-    public IdValuePair(int id, String value)
-    {
+    public IdValuePair(int id, String value) {
         this.id = id;
         this.value = value;
     }
 
 
-    public int getId()
-    {
+    public int getId() {
         return id;
     }
 
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 }

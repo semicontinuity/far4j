@@ -23,33 +23,31 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
     private final QueryPanelContentProvider queryPanelContentProvider;
 
 
-    public JDBCPluginInstance (JDBCPlugin plugin)
-    {
+    public JDBCPluginInstance(JDBCPlugin plugin) {
         this.plugin = plugin;
-        this.sessionListPanelContentProvider = new GenericSessionListPanelContentProvider (
+        this.sessionListPanelContentProvider = new GenericSessionListPanelContentProvider(
                 this.plugin,
                 this,
                 " JDBC: Stored sessions ")
-                {
-
-                    protected Properties loadSession(File target) throws IOException {
-                        final Properties properties = super.loadSession(target);
-                        final String template = properties.getProperty("use-template");
-                        return (template != null)
-                                ? loadTemplate(template, properties)
-                                : properties;
-                    }
-                };
+        {
+            protected Properties loadSession(final File target) throws IOException {
+                final Properties properties = super.loadSession(target);
+                final String template = properties.getProperty("use-template");
+                return (template != null)
+                        ? loadTemplate(template, properties)
+                        : properties;
+            }
+        };
         this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this);
     }
 
-    public void navigateToSessionList () {
+    public void navigateToSessionList() {
         LOGGER.debug("navigateToSessionList");
         panelContentProvider = sessionListPanelContentProvider;
     }
 
-    public void openSession (final Properties properties) throws Exception {
-        queryPanelContentProvider.init (properties);
+    public void openSession(final Properties properties) throws Exception {
+        queryPanelContentProvider.init(properties);
         navigateToQueryResult();
     }
 
@@ -71,7 +69,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
         final Set<Map.Entry<Object, Object>> entries = parameters.entrySet();
 
         for (Map.Entry<Object, Object> entry : entries) {
-            result = result.replace( "${" + entry.getKey() + "}", (CharSequence) entry.getValue());
+            result = result.replace("${" + entry.getKey() + "}", (CharSequence) entry.getValue());
         }
 
         final Properties properties = new Properties();
