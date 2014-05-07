@@ -91,6 +91,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
         // TODO: dummy parameter
         final PluginPanelItem[] panelItems = executeQuery(query, new HashMap<Integer, String[]>(), columnCount);
         defaults = panelItems[0].customColumns;
+        LOGGER.info("Defaults query executed");
     }
 
     private void initPanelModes (Properties properties)
@@ -272,24 +273,19 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
 
     public int processKey (int key, int controlState) {
         int realKey = ProcessKeyFlags.clearedPreprocess (key);
-        if (shift (controlState) && realKey == VK_F4)
-        {
+        if (shift (controlState) && realKey == VK_F4) {
             return handleInsert ();
         }
-        if (noFlags (controlState) && realKey == VK_F4)
-        {
+        if (noFlags (controlState) && realKey == VK_F4) {
             return handleUpdate ();
         }
-        if (noFlags (controlState) && realKey == VK_F8)
-        {
+        if (noFlags (controlState) && realKey == VK_F8) {
             return handleDelete ();
         }
-        if (shift (controlState) && realKey == VK_F2)
-        {
+        if (shift (controlState) && realKey == VK_F2) {
             return handleExport ();
         }
-        else
-        {
+        else {
             return 0;
         }
     }
@@ -374,15 +370,13 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider
         }
     }
 
-    private int handleUpdate ()
-    {
+    private int handleUpdate () {
         if (properties.getProperty ("update.query") == null)
             return 0;
         int selectedItemId = AbstractPlugin.getSelectedItemCrc32 ();
         String[] selectedLineValues = data.get (selectedItemId);
         ParametersDialog dialog = new ParametersDialog (this, properties, "update", selectedLineValues);
-        if (!dialog.activate ())
-        {
+        if (!dialog.activate ()) {
             return 1;
         }
         else

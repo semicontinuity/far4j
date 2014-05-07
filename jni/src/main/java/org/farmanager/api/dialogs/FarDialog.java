@@ -33,13 +33,13 @@ public class FarDialog extends FarComponent {
      * @return This function returns either -1, if the user cancelled the dialog,
      * or the index of the selected dialog item.
      */
-    public int show()
-    {
+    public int show() {
         final InitDialogItem[] initDialogItems = constructInitDialogItems ();
-        LOGGER.info ("Going to show dialog...");
+        LOGGER.info ("Going to show dialog with " + initDialogItems.length + " items");
         final int code = AbstractPlugin.dialog(
             x1, y1, x2, y2, "helpTopic", initDialogItems);
-        getDataFromInitDialogItems (initDialogItems);
+        LOGGER.info("Dialog returned code " + code);
+        getDataFromInitDialogItems(initDialogItems);
         return code;
     }
 

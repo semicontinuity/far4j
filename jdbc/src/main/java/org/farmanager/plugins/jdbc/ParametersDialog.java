@@ -7,6 +7,7 @@ import org.farmanager.api.dialogs.FarDialogItem;
 import org.farmanager.api.dialogs.FarDoubleBox;
 import org.farmanager.api.dialogs.FarText;
 
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -147,19 +148,17 @@ public class ParametersDialog extends FarDialog
      * Activates the dialog
      * @return true if dialog
      */
-    public boolean activate ()
-    {
+    public boolean activate () {
         return (show () != -1) && !cancelButton.selected;
     }
 
     public Object[] getParams (Object id) {
         final Object[] params = new Object[parameterDataControls.length + 1];
-        for (int i=0; i < parameterDataControls.length; i++)
-        {
+        for (int i=0; i < parameterDataControls.length; i++) {
             params[i+1] = ((EditedValueProvider)parameterDataControls[i]).getEditedValue();
         }
         params[0] = id;
-        LOGGER.info("Returning edited values: " + params);
+        LOGGER.info("Returning edited values: " + Arrays.toString(params));
         return params;
     }
 }

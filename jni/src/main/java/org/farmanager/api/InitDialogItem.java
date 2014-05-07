@@ -41,7 +41,7 @@ public class InitDialogItem {
     public String data;
 
     @UsedFromNativeCode
-    public FarListItem[] param;
+    public /*FarListItem[]*/Object param;
 
 
     public InitDialogItem(

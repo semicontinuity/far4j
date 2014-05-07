@@ -990,8 +990,8 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
         jfieldID fid_param          = env->GetFieldID (jcls_InitDialogItem, "param", "Ljava/lang/Object;");
 
         struct FarDialogItem* initItems = new FarDialogItem[length];
-        for (int i=0; i < length; i++)
-        {        
+        for (int i=0; i < length; i++) {
+        
             const jobject element = env->GetObjectArrayElement (initDialogItems, i);
             //log ("element: ", (int)element);
 
@@ -1025,6 +1025,13 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
             // -----------------------------------------------------------------------------------     
             jint j_flags = env->GetIntField (element, fid_flags);
             initItems[i].Flags = j_flags;
+
+            initItems[i].History = nullptr;
+            initItems[i].Mask = nullptr;
+            initItems[i].MaxLength = 0;
+            initItems[i].UserData = 0;
+            initItems[i].Reserved[0] = 0;
+            initItems[i].Reserved[1] = 0;
 
             // InitDialogItem.Data
             // -----------------------------------------------------------------------------------
@@ -1092,8 +1099,25 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
             }
 
         }
+
+	struct FarDialogItem DialogItems1[] =
+        { DI_BUTTON,  0, 19,  0,  0,
+          0 , nullptr, nullptr, DIF_NONE, L"OK", 0, 0 };
+
+        HANDLE hDlg = Info.DialogInit(&MainGuid, &DialogGuid, x1, y1, x2, y2, L"Contents",
+	                              initItems, length, 0, 0,
+	                              ShowDialogProc, (void *)0);
+
+	if (hDlg == INVALID_HANDLE_VALUE) {
+            log(L"DialogInit failed");
+	    return -1;
+        }
+
+	intptr_t ExitCode = Info.DialogRun(hDlg);
+
+	Info.DialogFree(hDlg);
+	return ExitCode;
     }
-    ShowDialog1(0,0);
     return -1;
 }
 
