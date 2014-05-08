@@ -1123,6 +1123,33 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
         }
 
 	intptr_t ExitCode = Info.DialogRun(hDlg);
+        //log("Propagate changes to java and release temp memory");
+        for (int j=0; j < length; j++)
+        {
+            const jobject element = env->GetObjectArrayElement (initDialogItems, j);
+//            log ("element: ", (int)element);
+            const jint j_type = env->GetIntField (element, fid_type);
+//            log ("type: ", (int)j_type);
+
+            if (j_type == DI_COMBOBOX || j_type == DI_LISTBOX) {
+//                log ("Deleting items", (int)DialogItems[j].ListItems->Items);
+//                delete DialogItems[j].ListItems->Items;
+// TODO: could not delete, it crashes! REWRITE!
+//                log ("Combo.Selected=", (int)DialogItems[j].Selected);
+//                log ("Combo.ListItems=", (int)DialogItems[j].ListItems);
+//                delete DialogItems[j].ListItems;
+//                log ("List poz:", DialogItems[j].ListPos);
+                // As ListPos coincides with Selected, ListPos will be returned in "selected"
+            }
+            else {
+                const wchar_t *data = ((const wchar_t *)Info.SendDlgMessage(hDlg,DM_GETCONSTTEXTPTR, j, 0));
+                env->SetObjectField(element, fid_data, env->NewString((const jchar*) data, _tcslen(data)));
+            }
+//            log ("Data=", DialogItems[j].Data);
+//            env->SetObjectField (element, fid_data, env->NewStringUTF(DialogItems[j].Data));
+            env->SetIntField (element, fid_flags,(jint)initItems[j].Flags); // union with ListPos
+        }
+
 
 	Info.DialogFree(hDlg);
 	return ExitCode;
