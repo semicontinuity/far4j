@@ -23,6 +23,7 @@ import org.farmanager.api.vfs.AbstractPanelContentProvider;
 import org.farmanager.api.vfs.MultiVirtualFSPluginInstance;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.*;
@@ -268,6 +269,101 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         }
     }
 
+
+    public Object executeScalarQuery (final String query)
+    {
+        try
+        {
+            Connection conn = DriverManager.getConnection (url);
+            Statement stmt = conn.createStatement ();
+            ResultSet rs = stmt.executeQuery (query);
+
+            Object value = null;
+
+            while (rs.next ())
+            {
+                value = rs.getObject (1); // TODO: more checks
+
+            }
+
+            rs.close();
+            stmt.close();
+
+            return value;
+
+        }
+        catch (Exception e)
+        {
+            LOGGER.error (e, e);
+            return null;    // TODO
+        }
+    }
+
+
+    @Override
+    public int getFile (final String fileName, final String destPath, final int move, final int opmode) {
+        int selectedItemId = AbstractPlugin.getSelectedItemCrc32 ();
+        final File file = new File (destPath, String.valueOf(selectedItemId));
+        try {
+            final FileWriter writer = new FileWriter(file);
+
+            writer.write(String.valueOf(selectedItemId));
+            writer.write('\n');
+            final String[] strings = data.get(selectedItemId);
+            for (String string : strings) {
+                writer.write(string);
+                writer.write('\n');
+            }
+
+            writer.close();
+        }
+        catch (IOException e) {
+            LOGGER.error(e,e);
+            return 1;
+        }
+
+        return 0;
+    }
+
+
+    @Override
+    public int putFile (final String fileName, final int move, final int opmode) {
+        final File file = new File (AbstractPlugin.getAnotherPanelDirectory (), fileName);
+        try {
+            final String s = readStringFromFile(file);
+            final String[] strings = s.split("\n");
+
+            for (int i = 0; i < strings.length; i++) {
+                strings[i] = strings[i].trim();
+            }
+
+            String query = constructQuery ("insert.query", strings);
+            executeUpdate(query);
+
+            return 1;
+        }
+        catch (IOException e) {
+            LOGGER.error(e,e);
+            return 0;
+        }
+    }
+
+    private static String readStringFromFile (File file) throws IOException
+    {
+        final FileReader fileReader = new FileReader (file);
+        final StringBuilder stringBuilder = new StringBuilder ();
+        char[] buffer = new char[2048];
+        while (true)
+        {
+            final int read = fileReader.read (buffer);
+            if (read == -1) break;
+            stringBuilder.append (buffer, 0, read);
+        }
+        fileReader.close();
+        return stringBuilder.toString ();
+    }
+
+
     public int processKey(final int key, final int controlState) {
         int realKey = ProcessKeyFlags.clearedPreprocess(key);
         if (shift(controlState) && realKey == VK_F4) {
@@ -374,11 +470,11 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         if (properties.getProperty("insert.query") == null) {
             return 0;
         }
-        ParametersDialog dialog = new ParametersDialog(this, properties, "insert", defaults);
+        final ParametersDialog dialog = new ParametersDialog(this, properties, "insert", defaults);
         if (!dialog.activate()) {
             return 1;
         } else {
-            String query = constructQuery("insert.query", dialog.getParams(null));
+            final String query = constructQuery("insert.query", dialog.getParams(null));
             executeUpdate(query);
             return 1;
         }
@@ -392,11 +488,11 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     }
 
 
-    private void executeUpdate(final String query) {
+    public void executeUpdate(final String query) {
         LOGGER.info("Executing query " + query);
         try {
-            Connection conn = DriverManager.getConnection(url);
-            Statement stmt = conn.createStatement();
+            final Connection conn = DriverManager.getConnection(url);
+            final Statement stmt = conn.createStatement();
             stmt.executeUpdate(query);
             stmt.close();
             conn.close();

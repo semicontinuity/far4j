@@ -25,6 +25,8 @@ public interface PanelContentProvider {
 
     int getFile (String fileName, String destPath, int move, int opmode);
 
+    int putFile(String fileName, int move, int opmode);
+
     int processKey(int key, int controlState);
 
     void setDirectory(String directory);

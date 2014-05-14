@@ -6,8 +6,11 @@ import org.farmanager.api.dialogs.FarDialog;
 import org.farmanager.api.dialogs.FarDialogItem;
 import org.farmanager.api.dialogs.FarDoubleBox;
 import org.farmanager.api.dialogs.FarText;
+import org.farmanager.plugins.jdbc.queries.Parameter;
+import org.farmanager.plugins.jdbc.queries.Query;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -47,6 +50,117 @@ public class ParametersDialog extends FarDialog {
         // width = 10
         addItem(cancelButton = cancelButton());
         LOGGER.info("Dialog constructed");
+    }
+
+    public ParametersDialog (
+            final QueryPanelContentProvider provider,
+            final Query query,
+            final String[] selectedLineValues)
+    {
+        try {
+            init2(provider, selectedLineValues, query);
+        }
+        catch (NumberFormatException e) {
+            LOGGER.error(e,e);
+        }
+    }
+
+
+    private void init2 (
+            final QueryPanelContentProvider provider,
+            final String[] selectedLineValues,
+            final Query query) {
+
+        x1 = -1;
+        y1 = -1;
+        x2 = 76;
+        y2 = 15;
+
+        addItem (titleBox (query.getTitle()));
+        final List<Parameter> parameters = query.getParameters();
+        int count = parameters.size();
+
+        parameterDataControls = new FarDialogItem[count];
+
+        LOGGER.info ("parameter count: " + count);
+        for (int i = 0; i < count; i++)
+        {
+            final Parameter parameter = parameters.get(i);
+            addParameter(
+                    selectedLineValues,
+                    provider,
+                    i,
+                    parameter.getQuery(),
+                    parameter.getType(),
+                    parameter.getTitle());
+        }
+        addItem (separator ());
+        // total width: 74; center: 37; buttons width=18;
+        // width = 6
+        addItem (okButton ());
+
+        // width = 10
+        addItem (cancelButton = cancelButton ());
+    }
+
+    private static FarDoubleBox titleBox (final String title)
+    {
+        final FarDoubleBox doubleBox = new FarDoubleBox ();
+        doubleBox.x1 = 3;
+        doubleBox.y1 = 1;
+        doubleBox.x2 = 72;
+        doubleBox.y2 = 13;
+        doubleBox.data = title;
+        return doubleBox;
+    }
+
+    private void addParameter (
+            final String[] selectedLineValues,
+            final QueryPanelContentProvider provider, final int i,
+
+            final String subQuery, final String subQueryType, final String data) {
+
+        FarText farText = new FarText ();
+        farText.x1 = 5;
+        farText.y1 = 3+i;
+        farText.x2 = 25;
+        farText.y2 = 3+i;
+        farText.data = data;
+        addItem (farText);
+
+        LOGGER.info ("subQuery for parameter " + i + " = " + subQuery);
+
+        if (selectedLineValues != null)
+            LOGGER.info("selectedLineValues[i]=" + selectedLineValues[i]);
+
+        if (subQuery != null)
+        {
+            if ("scalar".equals(subQueryType)) {
+                final JDBCEditControl jdbcComboBox = new JDBCEditControl();
+                parameterDataControls[i] = jdbcComboBox;
+                parameterDataControls[i].data = String.valueOf(provider.executeScalarQuery(subQuery));
+            }
+            else {
+                final JDBCComboBox jdbcComboBox = new JDBCComboBox(provider.executeIdValueQuery(subQuery));
+                jdbcComboBox.initialValue = selectedLineValues == null ? "" : selectedLineValues[i];
+                parameterDataControls[i] = jdbcComboBox;
+                parameterDataControls[i].data =
+                        selectedLineValues == null ? "" : selectedLineValues[i];
+            }
+        }
+        else
+        {
+            parameterDataControls[i] = new JDBCEditControl ();
+            parameterDataControls[i].data =
+                    selectedLineValues == null ? "" : selectedLineValues[i];
+        }
+        parameterDataControls[i].x1 = 26;
+        parameterDataControls[i].y1 = 3 + i;
+        parameterDataControls[i].x2 = 70;
+        parameterDataControls[i].y2 = 3 + i;
+        addItem (parameterDataControls[i]);
+
+        LOGGER.info("SET parameterDataControls[i].data=" + parameterDataControls[i].data);
     }
 
     private static FarDoubleBox addTitle(final Properties properties, final String prefix) {

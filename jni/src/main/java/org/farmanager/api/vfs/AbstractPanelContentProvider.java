@@ -8,7 +8,7 @@ import org.farmanager.api.jni.FarInfoPanelLine;
  * A convenience class to implement PanelContentProviders
  * TODO replace by high-level ("nodes") API
  */
-public class AbstractPanelContentProvider implements PanelContentProvider
+public abstract class AbstractPanelContentProvider implements PanelContentProvider
 {
 
     public PanelMode[] getPanelModes() {
@@ -35,6 +35,13 @@ public class AbstractPanelContentProvider implements PanelContentProvider
     }
 
     public int getFile(String fileName, String destPath, int move, int opmode) {
+        // do nothing by default
+        return 0;
+    }
+
+
+    @Override
+    public int putFile(String fileName, int move, int opmode) {
         // do nothing by default
         return 0;
     }

@@ -859,6 +859,16 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_message
 }
 
 
+JNIEXPORT jstring JNICALL Java_org_farmanager_api_AbstractPlugin_getCommandLine
+  (JNIEnv *, jclass)
+{    
+    const size_t size = Info.PanelControl(PANEL_ACTIVE, FCTL_GETCMDLINE, 0, NULL);
+    void *buffer = malloc(size);
+    Info.PanelControl(PANEL_ACTIVE, FCTL_GETCMDLINE, size, (void*)buffer);
+    return env->NewString ((const jchar*)buffer, size);
+}
+
+
 // FCTL_GETPANELINFO --> CurrentItem
 JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_getCurrentItem(JNIEnv *, jclass)
 {

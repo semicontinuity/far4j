@@ -78,6 +78,15 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
         return panelContentProvider.getFile(fileName, destPath, move, opmode);
     }
 
+
+    // =========================================================================
+    // PutFile
+    // =========================================================================
+    @Override
+    public int putFile (final String fileName, final int move, final int opmode) {
+        return panelContentProvider.putFile(fileName, move, opmode);
+    }
+
     // =========================================================================
     // DeleteFiles
     // =========================================================================

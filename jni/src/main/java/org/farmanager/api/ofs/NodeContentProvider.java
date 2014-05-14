@@ -204,14 +204,36 @@ public class NodeContentProvider extends AbstractPanelContentProvider
     }
 
 
-    public void putFile (String fileName, int move, int opmode) throws IOException
+    /**
+     * This method is called to put file to the file system emulated by the plugin.
+     * (FAR to plugin: "this file is for you, you should place it on your panel").
+     * FAR calls exported function PutFiles, PutFiles calls this method
+     * of the proper plugin instance object for every file.
+     *
+     * @return If the function succeeds, the return value must be 1 or 2.
+     *         If the return value is 1, FAR tries to position the cursor
+     *         to the most recently created file on the active panel.
+     *         If the plugin returns 2, FAR does not perform any positioning operations.
+     *         If the function fails, 0 should be returned.
+     *         If the function was interrupted by the user, it should return -1.
+     */
+    public int putFile (String fileName, int move, int opmode)
     {
         if (node instanceof PutContentOperation)
         {
             final File file = new File (AbstractPlugin.getAnotherPanelDirectory (), fileName);
-            final String contents = readStringFromFile (file);   // TODO: what about non-standard panels?
-            ((PutContentOperation) node).putContent (fileName, contents);
+            final String contents;   // TODO: what about non-standard panels?
+            try {
+                contents = readStringFromFile (file);
+                ((PutContentOperation) node).putContent (fileName, contents);
+                return 1;
+            }
+            catch (IOException e) {
+                LOGGER.error(e,e);
+                return 0;
+            }
         }
+        return 2;
     }
 
     private static String readStringFromFile (File file) throws IOException
