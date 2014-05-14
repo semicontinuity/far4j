@@ -1,5 +1,22 @@
 package org.farmanager.plugins.jdbc;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import org.apache.log4j.Logger;
 import org.farmanager.api.AbstractPlugin;
 import org.farmanager.api.PanelMode;
@@ -7,29 +24,20 @@ import org.farmanager.api.PanelModeId;
 import org.farmanager.api.PluginPanelItem;
 import org.farmanager.api.dialogs.YesNoDialog;
 import org.farmanager.api.jni.FarInfoPanelLine;
-
-import static org.farmanager.api.jni.KeyCodes.*;
-
 import org.farmanager.api.jni.PanelColumnType;
 import org.farmanager.api.jni.ProcessKeyFlags;
-
-import static org.farmanager.api.jni.ProcessKeyFlags.alt;
-import static org.farmanager.api.jni.ProcessKeyFlags.noFlags;
-import static org.farmanager.api.jni.ProcessKeyFlags.shift;
-
 import org.farmanager.api.messages.Messages;
 import org.farmanager.api.panels.NamedColumnDescriptor;
 import org.farmanager.api.vfs.AbstractPanelContentProvider;
-import org.farmanager.api.vfs.MultiVirtualFSPluginInstance;
+import org.farmanager.plugins.jdbc.queries.Query;
+import org.farmanager.plugins.jdbc.queries.QueryManager;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.sql.*;
-import java.text.DecimalFormat;
-import java.text.MessageFormat;
-import java.util.*;
+import static org.farmanager.api.jni.KeyCodes.VK_F2;
+import static org.farmanager.api.jni.KeyCodes.VK_F4;
+import static org.farmanager.api.jni.KeyCodes.VK_F8;
+import static org.farmanager.api.jni.ProcessKeyFlags.alt;
+import static org.farmanager.api.jni.ProcessKeyFlags.noFlags;
+import static org.farmanager.api.jni.ProcessKeyFlags.shift;
 
 /**
  * Provides a content of a panel that is a result of given SQL query
@@ -53,15 +61,33 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     private String[] defaults;
     private AbstractPlugin plugin;
     private PluginPanelItem[] pluginPanelItems;
-    private MultiVirtualFSPluginInstance instance;
+    private JDBCPluginInstance instance;
 
     private static DecimalFormat format = new DecimalFormat("0000000000");
 
+    private QueryManager queryManager;
 
-    public QueryPanelContentProvider(final JDBCPlugin plugin, final JDBCPluginInstance instance) {
+    /** If true, query results will be rendered as directories */
+    private boolean navigatable;
+    private String childTemplate;
+    private View currentView;
+
+
+    public QueryPanelContentProvider(JDBCPlugin plugin, JDBCPluginInstance instance)
+    {
         this.instance = instance;
         this.plugin = plugin;
-        this.data = new HashMap<Integer, String[]>();
+        this.data = new HashMap<Integer, String[]> ();
+
+        queryManager = new QueryManager();
+        queryManager.setDirectory(new File(plugin.getHome(), "queries"));
+        queryManager.create();
+    }
+
+
+    public void setView(final View view) {
+        this.currentView = view;
+        init(view.getProperties());
     }
 
     public void init(final Properties properties) {
@@ -73,8 +99,10 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         url = properties.getProperty("url");
         panelTitle = properties.getProperty("title");
         columnCount = Integer.parseInt(properties.getProperty("column.count"));
-        initPanelModes(properties);
-        initDefaults(properties);
+        initPanelModes (properties);
+        initDefaults (properties);
+        navigatable = properties.getProperty("navigatable") != null;
+        childTemplate = properties.getProperty("child-template");
     }
 
     private static void loadDriver(final String driverClass) {
@@ -132,6 +160,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         return pluginPanelItems;
     }
 
+
     private PluginPanelItem[] executeQuery(
             final String query, final Map<Integer, String[]> result, final int columnCount)
     {
@@ -155,7 +184,9 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
                 // keep id in crc32.
                 // we use Far presentation model to data model, which is ugly
                 pluginPanelItem.crc32 = id;
-                pluginPanelItem.dwFileAttributes = PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
+                pluginPanelItem.dwFileAttributes = navigatable
+                        ? PluginPanelItem.FILE_ATTRIBUTE_DIRECTORY
+                        : PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
                 pluginPanelItem.customColumns = new String[columnCount];
                 for (int i = 0; i < columnCount; i++) {
                     String value = String.valueOf(rs.getObject(i + 2));
@@ -186,6 +217,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     }
 
 
+    // new?
     private List<String[]> executeQuery(final String query, final int columnCount) throws SQLException {
         final Connection conn = DriverManager.getConnection(url);
         LOGGER.debug("Connection to " + url + " established");
@@ -219,25 +251,42 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         return properties.getProperty("column." + i + ".padding") != null;
     }
 
-    private static PanelColumnType columnType(final int i) {
-        return Enum.valueOf(PanelColumnType.class, "CUSTOM" + i);
+    private static PanelColumnType columnType (int i)
+    {
+        return Enum.valueOf (PanelColumnType.class, "CUSTOM" + i);
     }
 
-    private static Integer columnWidth(final Properties properties, final int i) {
-        return Integer.valueOf(properties.getProperty("column." + i + ".width"));
+    private static Integer columnWidth (Properties properties, int i)
+    {
+        return Integer.valueOf (properties.getProperty ("column." + i + ".width"));
     }
 
-    private static String columnTitle(final Properties properties, final int i) {
+    private static String columnTitle (Properties properties, int i)
+    {
         return properties.getProperty("column." + i + ".title");
     }
 
-    private static int nameColumn(final Properties properties) {
-        try {
-            return Integer.parseInt(properties.getProperty("namecolumn"));
-        } catch (NumberFormatException e) {
+    private static int nameColumn (Properties properties)
+    {
+        return intPropertySafe(properties, "namecolumn");
+    }
+
+    private static int keyColumn (Properties properties)
+    {
+        return intPropertySafe(properties, "key-column");
+    }
+
+    private static int intPropertySafe (final Properties properties, final String key) {
+        try
+        {
+            return Integer.parseInt(properties.getProperty(key));
+        }
+        catch (NumberFormatException e)
+        {
             return -1;
         }
     }
+
 
     private String pad(final String s, final int width) {
 //        LOGGER.info("Padding string: [" + s + "]");
@@ -366,7 +415,10 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
 
     public int processKey(final int key, final int controlState) {
         int realKey = ProcessKeyFlags.clearedPreprocess(key);
-        if (shift(controlState) && realKey == VK_F4) {
+        if (alt(controlState) && shift (controlState) && realKey == VK_F4) {
+            return handleFavorites();
+        }
+        else if (shift(controlState) && realKey == VK_F4) {
             return handleInsert();
         }
         else if (noFlags(controlState) && realKey == VK_F4) {
@@ -466,6 +518,28 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         }
     }
 
+
+    private int handleFavorites ()
+    {
+        final String[] titles = favoriteQueriesTitles();
+        if (titles.length == 0) return 0;
+
+        ItemSelectionDialog dialog = new ItemSelectionDialog ("Favorite queries", titles);
+        final int i = dialog.show();
+        if (i == -1)
+        {
+            return 1;
+        }
+        else
+        {
+//            return handleInsert(
+//                "favorite.query." + dialog.selectedItem());
+            final Query query = queryManager.getQueries().get(dialog.selectedItem());
+            return query.handleInsert(this, defaults);
+        }
+    }
+
+
     private int handleInsert() {
         if (properties.getProperty("insert.query") == null) {
             return 0;
@@ -479,6 +553,27 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
             return 1;
         }
     }
+
+    private String[] favoriteQueriesTitles () {
+/*
+        final String count = properties.getProperty("favorite.query.count");
+        final int length = Integer.parseInt(count);
+        final String[] names = new String[length];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = properties.getProperty("favorite.query." + i + ".query.title");
+
+        }
+        return names;
+*/
+        final List<Query> list = queryManager.getQueries();
+        final String[] strings = new String[list.size()];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = list.get(i).getTitle();
+        }
+        return strings;
+    }
+
+
 
     private String constructQuery(
             final String templateName, final Object[] params)
@@ -569,16 +664,48 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     }
 
     @Override
-    public void setDirectory(final String directory) {
-        LOGGER.info("setDirectory " + directory);
+    public void setDirectory(String directory) {
+        LOGGER.info("Navigating to view " + directory);
         try {
             if ("..".equals(directory)) {
-                instance.navigateToSessionList();
+                final View parent = currentView.getParent();
+                if (parent == null)
+                    instance.navigateToSessionList();
+                else
+                    setView(parent);
             } else {
-                LOGGER.warn("There should be no directories here!");
+                if (childTemplate != null) {
+                    Properties childProperties = new Properties();
+                    for (Object key : properties.keySet()) {
+                        final String propertyName = (String) key;
+                        if (propertyName.startsWith("child."))
+                            childProperties.put(propertyName.substring("child.".length()), properties.get(key));
+                    }
+
+                    childProperties.put("main-id", childKey());
+                    childProperties = instance.loadTemplate(childTemplate, childProperties);
+
+                    final View childView = new View(
+                            childProperties,
+                            currentView);
+
+                    setView(childView);
+                }
             }
         } catch (Exception e) {
             LOGGER.error(e, e);  // TODO
+        }
+    }
+
+    private String childKey () {
+        final int index = keyColumn(properties);
+        if (index == -1)
+        {
+            return String.valueOf(AbstractPlugin.getSelectedItemCrc32());
+        }
+        else
+        {
+            return AbstractPlugin.getSelectedItem();
         }
     }
 
