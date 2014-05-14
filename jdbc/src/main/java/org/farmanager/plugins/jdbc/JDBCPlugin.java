@@ -17,7 +17,7 @@ public class JDBCPlugin extends MultisessionVFSPlugin {
     };
 
     @Override
-    public AbstractPluginInstance createInstance() {
+    public AbstractPluginInstance createInstance() throws Exception {
         return new JDBCPluginInstance(this);
     }
 

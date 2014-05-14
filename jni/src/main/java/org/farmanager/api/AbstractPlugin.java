@@ -37,10 +37,19 @@ public abstract class AbstractPlugin
     /** Plugin folder */
     protected File home;
 
-    public static AbstractPlugin instance() throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException, IOException {
+    @UsedFromNativeCode
+    public static AbstractPlugin instance() throws Exception {
         LOGGER.info("@ instance");
-        return (AbstractPlugin) Class.forName("org.farmanager.plugins.jdbc.JDBCPlugin").newInstance();
+        try {
+            final Class<?> aClass = Class.forName("org.farmanager.plugins.jdbc.JDBCPlugin");
+            LOGGER.info("Class loaded");
+            return (AbstractPlugin) aClass.newInstance();
+        } catch (Exception e) {
+            LOGGER.error(e, e);
+            throw e;
+        } finally {
+            LOGGER.info("< instance");
+        }
     }
 
     /**
@@ -58,7 +67,7 @@ public abstract class AbstractPlugin
      * @return an instance of plugin created.
      */
     @UsedFromNativeCode
-    public abstract AbstractPluginInstance createInstance();
+    public abstract AbstractPluginInstance createInstance() throws Exception;
 
 
     /**

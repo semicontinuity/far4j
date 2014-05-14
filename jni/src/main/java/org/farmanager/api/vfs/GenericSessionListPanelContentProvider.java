@@ -34,14 +34,14 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
 
 
     public GenericSessionListPanelContentProvider (
-        MultisessionVFSPlugin plugin,
-        Listener listener,
-        String title)
+            final MultisessionVFSPlugin plugin,
+            final Listener listener,
+            final String title)
     {
         this.title = title;
         this.plugin = plugin;
         this.listener = listener;
-        this.rootSessionsFolder = plugin.sessionsFolder();
+        this.rootSessionsFolder = new File(plugin.pluginLocalSettingsFolder(), "sessions");
         this.currentSessionsFolder = rootSessionsFolder;
     }
 

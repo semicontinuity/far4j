@@ -14,11 +14,11 @@ import java.io.File;
  */
 public abstract class MultisessionVFSPlugin extends AbstractPlugin {
 
-    public final File sessionsFolder() {
-        final String farProfileEnv = System.getenv().get("FARPROFILE");
+    public final File pluginLocalSettingsFolder() {
+        final String farProfileEnv = System.getenv().get("FARLOCALPROFILE");
         final File farProfileFolder = new File(farProfileEnv);
         if (!farProfileFolder.isDirectory())
-            throw new IllegalStateException("%FARPROFILE% folder does not exist!");
+            throw new IllegalStateException("%FARLOCALPROFILE% folder does not exist!");
 
         final File pluginHome = getHome();
         final String pluginName = pluginHome.getName();
@@ -27,7 +27,7 @@ public abstract class MultisessionVFSPlugin extends AbstractPlugin {
         final File pluginSettingsFolder = new File(far4jSettingsFolder, pluginName);
 
         if (!pluginSettingsFolder.exists() || !pluginSettingsFolder.isDirectory())
-            throw new IllegalStateException("Cannot find plugin settings folder!");
+            throw new IllegalStateException("Cannot find plugin settings folder " + pluginSettingsFolder);
         return pluginSettingsFolder;
     }
 }

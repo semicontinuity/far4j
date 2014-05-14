@@ -23,22 +23,34 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
     private final QueryPanelContentProvider queryPanelContentProvider;
 
 
-    public JDBCPluginInstance(JDBCPlugin plugin) {
-        this.plugin = plugin;
-        this.sessionListPanelContentProvider = new GenericSessionListPanelContentProvider(
-                this.plugin,
-                this,
-                " JDBC: Stored sessions ")
-        {
-            protected Properties loadSession(final File target) throws IOException {
-                final Properties properties = super.loadSession(target);
-                final String template = properties.getProperty("use-template");
-                return (template != null)
-                        ? loadTemplate(template, properties)
-                        : properties;
-            }
-        };
-        this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this);
+    public JDBCPluginInstance(JDBCPlugin plugin) throws Exception {
+        LOGGER.debug("> <init>");
+        try {
+            this.plugin = plugin;
+            this.sessionListPanelContentProvider = new GenericSessionListPanelContentProvider(
+                    this.plugin,
+                    this,
+                    " JDBC: Stored sessions ")
+            {
+                protected Properties loadSession(final File target) throws IOException {
+                    LOGGER.debug("@ loadSession");
+                    final Properties properties = super.loadSession(target);
+                    final String template = properties.getProperty("use-template");
+                    return (template != null)
+                            ? loadTemplate(template, properties)
+                            : properties;
+                }
+            };
+            this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this);
+
+        }
+        catch (Exception e) {
+            LOGGER.error(e, e);
+            throw e;
+        }
+        finally {
+            LOGGER.debug("< <init>");
+        }
     }
 
     public void navigateToSessionList() {

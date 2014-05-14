@@ -80,7 +80,9 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         this.data = new HashMap<Integer, String[]> ();
 
         queryManager = new QueryManager();
-        queryManager.setDirectory(new File(plugin.getHome(), "queries"));
+        final File queries = new File(plugin.pluginLocalSettingsFolder(), "queries");
+        LOGGER.info("queries dir: " + queries);
+        queryManager.setDirectory(queries);
         queryManager.create();
     }
 
