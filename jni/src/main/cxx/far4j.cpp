@@ -34,7 +34,7 @@ static jclass    jcls_AbstractPluginInstance;
 static jclass    jcls_Plugin;
 static jclass    jcls_PluginPanelItem;
 
-static jmethodID jmid_Plugin_getFlags;
+static jmethodID jmid_PluginInstance_getFlags;
 static jmethodID jmid_PluginInstance_getFiles;
 static jmethodID jmid_PluginInstance_setDirectory;
 static jmethodID jmid_PluginInstance_getFindData;
@@ -522,12 +522,12 @@ void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
 
     // Flags (NB now 64 bit!)
     jmethodID jmid_AbstractPluginInstance_getFlags = env->GetMethodID (
-        jcls_AbstractPluginInstance, "getFlags", "()I");
+        jcls_AbstractPluginInstance, "getFlags", "()J");
     if (jmid_AbstractPluginInstance_getFlags == 0) {
         log(TEXT("jmid_AbstractPluginInstance_getFlags := 0"));
         return ;
     }
-    jint Flags   = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_getFlags);
+    jlong Flags = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_getFlags);
     openPluginInfo->Flags  = Flags;
 
     // HostFile
@@ -629,7 +629,7 @@ void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
     // Number of  PanelMode structures
 
     // TODO: dynamic data structures are not freed! Can add lazy init...
-    jmethodID jmid_AbstractPluginInstance_getPanelModes= env->GetMethodID (
+    jmethodID jmid_AbstractPluginInstance_getPanelModes = env->GetMethodID (
         jcls_AbstractPluginInstance, "getPanelModes", "()[Lorg/farmanager/api/PanelMode;");
     //log ("| CallObjectMethod getPanelModes");
     jobjectArray panelModeArray = (jobjectArray) env->CallObjectMethod (

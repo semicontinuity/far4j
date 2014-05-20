@@ -1,5 +1,6 @@
 package org.farmanager.api;
 
+import org.farmanager.api.jni.OpenPanelInfoFlags;
 import org.farmanager.api.jni.UsedFromNativeCode;
 import org.farmanager.api.jni.FarInfoPanelLine;
 
@@ -7,7 +8,7 @@ import org.farmanager.api.jni.FarInfoPanelLine;
 /**
  * Corresponds to open plugin instance.
  * Instances of this class are created for every new plugin instance
- * by implementations of {@link AbstractPlugin#createInstance(int)}
+ * by implementations of {@link AbstractPlugin#instance}
  * TODO: All low-level code should be moved to jni package!
  */
 @UsedFromNativeCode
@@ -24,8 +25,7 @@ public abstract class AbstractPluginInstance
      * Not all data are available in constructor call, e.g. commandLine
      */
     @UsedFromNativeCode
-    public void init ()
-    {
+    public void init () {
         // Do nothing by default.
     }
 
@@ -41,8 +41,7 @@ public abstract class AbstractPluginInstance
      * of the proper plugin instance object.
      */
     @UsedFromNativeCode
-    public void close ()
-    {
+    public void close () {
         // Do nothing by default.
     }
 
@@ -61,7 +60,7 @@ public abstract class AbstractPluginInstance
      *               (use {@link org.farmanager.api.jni.OperationModeFlags}
      */
     @UsedFromNativeCode
-    public PluginPanelItem[] getFindData (int opMode)
+    public PluginPanelItem[] getFindData(int opMode)
     {
         // No panel data by default
         return null;
@@ -72,11 +71,14 @@ public abstract class AbstractPluginInstance
     // =========================================================================
 
 
+    /**
+     * Related to FAR exported function GetOpenPanelInfo
+     *
+     * @return Combination of the OPIF_* constants
+     */
     @UsedFromNativeCode
-    public int getFlags ()
-    {
-        // no special flags by default
-        return 0;
+    public long getFlags() {
+        return OpenPanelInfoFlags.OPIF_NONE;
     }
 
     /**

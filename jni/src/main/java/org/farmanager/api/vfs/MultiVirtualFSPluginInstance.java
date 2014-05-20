@@ -5,7 +5,7 @@ import org.farmanager.api.AbstractPluginInstance;
 import org.farmanager.api.PanelMode;
 import org.farmanager.api.PluginPanelItem;
 import org.farmanager.api.jni.FarInfoPanelLine;
-import static org.farmanager.api.jni.OpenPluginInfoFlags.*;
+import org.farmanager.api.jni.OpenPanelInfoFlags;
 import org.farmanager.api.jni.UsedFromNativeCode;
 
 /**
@@ -134,15 +134,13 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
     }
 
     /**
-     * Related to FAR exported function GetOpenPluginInfo
+     * Related to FAR exported function GetOpenPanelInfo
      *
      * @return Combination of the OPIF_* constants
      */
     @Override
-    public int getFlags() {
-        return /*OPIF_USEHIGHLIGHTING.value ()
-            | */OPIF_SHOWPRESERVECASE.value ()
-            | OPIF_ADDDOTS.value ();
+    public long getFlags() {
+        return OpenPanelInfoFlags.OPIF_SHOWPRESERVECASE | OpenPanelInfoFlags.OPIF_ADDDOTS;
     }
 
     // =========================================================================
