@@ -645,19 +645,16 @@ void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
         jfieldID jfid_columnTypes        = env->GetFieldID (jcls_PanelMode, "columnTypes",    "Ljava/lang/String;");
         jfieldID jfid_columnWidths       = env->GetFieldID (jcls_PanelMode, "columnWidths",   "Ljava/lang/String;");
         jfieldID jfid_columnTitles       = env->GetFieldID (jcls_PanelMode, "columnTitles",   "[Ljava/lang/String;");
-        jfieldID jfid_fullScreen         = env->GetFieldID (jcls_PanelMode, "fullScreen",     "I");
-        jfieldID jfid_detailedStatus     = env->GetFieldID (jcls_PanelMode, "detailedStatus", "I");
+        jfieldID jfid_flags              = env->GetFieldID (jcls_PanelMode, "flags",          "J");
         jfieldID jfid_statusColumnTypes  = env->GetFieldID (jcls_PanelMode, "statusColumnTypes",    "Ljava/lang/String;");
         jfieldID jfid_statusColumnWidths = env->GetFieldID (jcls_PanelMode, "statusColumnWidths",   "Ljava/lang/String;");
-        for (int i=0; i < length; i++)
-        {
-            jobject element = env->GetObjectArrayElement (panelModeArray, i);
+        for (int i=0; i < length; i++) {
+            const jobject element = env->GetObjectArrayElement(panelModeArray, i);
             // TODO: check element for NULL
             memset(&(data->panelModes[i]), 0, sizeof(PanelMode));
 
-            jint jint_fullScreen = env->GetIntField (element, jfid_fullScreen);
-            jint jint_detailedStatus = env->GetIntField (element, jfid_detailedStatus);
-            data->panelModes[i].Flags = (jint_detailedStatus ? PMFLAGS_FULLSCREEN : 0) | (jint_detailedStatus ? PMFLAGS_DETAILEDSTATUS : 0);
+            const jlong flags = env->GetLongField (element, jfid_flags);
+            data->panelModes[i].Flags = flags;
 
             jstring jstr_columnTypes = (jstring) env->GetObjectField (element, jfid_columnTypes);
             data->panelModes[i].ColumnTypes = (const _TCHAR*) env->GetStringChars (jstr_columnTypes, 0);

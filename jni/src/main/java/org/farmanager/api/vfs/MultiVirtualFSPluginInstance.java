@@ -128,8 +128,7 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
     }
 
     @Override
-    public FarInfoPanelLine[] getInfoPanelLines ()
-    {
+    public FarInfoPanelLine[] getInfoPanelLines () {
         return panelContentProvider.getInfoPanelLines ();
     }
 

@@ -129,7 +129,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
 
 
     private void initPanelModes(final Properties properties) {
-        NamedColumnDescriptor[] columns = new NamedColumnDescriptor[columnCount];
+        final NamedColumnDescriptor[] columns = new NamedColumnDescriptor[columnCount];
         for (int i = 0; i < columnCount; i++) {
             columns[i] = new NamedColumnDescriptor(
                     columnTitle(properties, i),
