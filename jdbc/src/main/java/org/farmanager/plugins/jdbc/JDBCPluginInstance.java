@@ -58,9 +58,16 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
         panelContentProvider = sessionListPanelContentProvider;
     }
 
-    public void openSession(final Properties properties) {
-        queryPanelContentProvider.init(properties);
-        navigateToQueryResult();
+    public void openSession(final Properties properties) throws IOException {
+//        queryPanelContentProvider.init(properties);
+//        navigateToQueryResult();
+        final String template = properties.getProperty("use-template");
+        final Properties realProperties = (template != null)
+                ? loadTemplate(template, properties)
+                : properties;
+
+        queryPanelContentProvider.setView(new View(realProperties,null));
+        panelContentProvider = queryPanelContentProvider;
     }
 
     public void navigateToQueryResult() {

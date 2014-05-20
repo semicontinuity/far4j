@@ -23,8 +23,7 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
 
     @UsedFromNativeCode
     @Override
-    public void init()
-    {
+    public void init() {
         LOGGER.info("command line=" + commandLine);
         navigateToSessionList();
         if (commandLine != null)
@@ -139,6 +138,7 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
      */
     @Override
     public long getFlags() {
+        LOGGER.debug("Add dots");
         return OpenPanelInfoFlags.OPIF_SHOWPRESERVECASE | OpenPanelInfoFlags.OPIF_ADDDOTS;
     }
 

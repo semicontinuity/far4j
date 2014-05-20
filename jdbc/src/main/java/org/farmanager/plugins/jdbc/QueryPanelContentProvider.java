@@ -133,7 +133,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         for (int i = 0; i < columnCount; i++) {
             columns[i] = new NamedColumnDescriptor(
                     columnTitle(properties, i),
-                    columnType(i),
+                    columnType(properties, i),
                     columnWidth(properties, i));
         }
         panelModes = new PanelMode[10];
@@ -253,9 +253,8 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         return properties.getProperty("column." + i + ".padding") != null;
     }
 
-    private static PanelColumnType columnType (int i)
-    {
-        return Enum.valueOf (PanelColumnType.class, "CUSTOM" + i);
+    private static PanelColumnType columnType(final Properties properties, final int i) {
+        return Enum.valueOf(PanelColumnType.class, properties.getProperty("column." + i + ".type", "CUSTOM" + i));
     }
 
     private static Integer columnWidth (Properties properties, int i)
@@ -263,8 +262,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         return Integer.valueOf (properties.getProperty ("column." + i + ".width"));
     }
 
-    private static String columnTitle (Properties properties, int i)
-    {
+    private static String columnTitle(Properties properties, int i) {
         return properties.getProperty("column." + i + ".title");
     }
 
