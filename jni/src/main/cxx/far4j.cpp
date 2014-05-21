@@ -265,6 +265,80 @@ log ("| Problem 1!");
 }
 
 
+static void copyPluginMenuItem(
+    struct PluginMenuItem *dst,
+    const jclass jcls_PluginInfo,
+    const jobject jobj_PluginInfo,
+    const char *field)
+{
+    const jclass jcls_PluginMenuItem = env->FindClass("org/farmanager/api/jni/PluginMenuItem");
+    if (jcls_PluginMenuItem == 0) {
+        log (TEXT("jcls_PluginMenuItem == 0"));
+        return;
+    }
+    const jfieldID fidGuid = env->GetFieldID(jcls_PluginMenuItem, "guid", "Ljava/util/UUID;");
+    if (fidGuid == 0) {
+        log(TEXT("fidGuid == 0"));
+        return;
+    }
+    const jfieldID fidString = env->GetFieldID(jcls_PluginMenuItem, "string", "Ljava/lang/String;");
+    if (fidString == 0) {
+        log(TEXT("fidString == 0"));
+        return;
+    }
+
+    const jclass jcls_UUID = env->FindClass("java/util/UUID");
+    if (jcls_UUID == 0) {
+        log (TEXT("jcls_UUID == 0"));
+        return;
+    }
+    const jfieldID fidMSB = env->GetFieldID(jcls_UUID, "mostSigBits", "J");
+    if (fidMSB == 0) {
+        log(TEXT("fidMSB == 0"));
+        return;
+    }
+    const jfieldID fidLSB = env->GetFieldID(jcls_UUID, "leastSigBits", "J");
+    if (fidLSB == 0) {
+        log(TEXT("fidLSB == 0"));
+        return;
+    }
+
+
+    const jfieldID fid = env->GetFieldID (jcls_PluginInfo, field, "[Lorg/farmanager/api/jni/PluginMenuItem;");
+    if (fid == 0) {
+        log(TEXT("fid == 0"));
+        return;
+    }
+
+    const jobjectArray array = (jobjectArray) env->GetObjectField(jobj_PluginInfo, fid);
+    if (array == 0) {
+        return;
+    }
+    else {
+        const int length = env->GetArrayLength(array);
+        const wchar_t**strings = (const wchar_t**)malloc(sizeof(wchar_t*)*length);
+        dst->Count = length;
+        dst->Guids = (GUID *)malloc(sizeof(GUID)*length);
+
+        for (int i = 0; i < length; i++) {
+            const jobject element = env->GetObjectArrayElement(array, i);
+            // assert element != 0
+            const jobject guid = (jobject) env->GetObjectField(element, fidGuid);
+            const jlong msb = env->GetLongField(guid, fidMSB);
+            const jlong lsb = env->GetLongField(guid, fidLSB);
+            memcpy((void*)&dst->Guids[i].Data1, &lsb, 8);
+            memcpy((void*)&dst->Guids[i].Data2, &msb, 8);
+
+            const jstring string = (jstring) env->GetObjectField(element, fidString);
+            const wchar_t* s = (const wchar_t*)env->GetStringChars(string, 0);  // TODO release
+            strings[i] = s;
+        }
+
+        dst->Strings = strings;
+    }
+}
+
+
 void WINAPI GetPluginInfoW(struct PluginInfo *Info) {
 	Info->StructSize=sizeof(*Info);
 	Info->Flags=PF_EDITOR;
@@ -280,9 +354,30 @@ void WINAPI GetPluginInfoW(struct PluginInfo *Info) {
         return;
     }
     const jobject jobj_PluginInfo = env->CallObjectMethod (jobj_PluginReference, jmid_getPluginInfo);
-    if (jmid_getPluginInfo == 0) {
-        log(TEXT("jobj_PluginInfo := 0"));
-        return;
+    if (jobj_PluginInfo != 0) {
+        const jclass jcls_PluginInfo = env->FindClass ("org/farmanager/api/jni/PluginInfo");
+        if (jcls_PluginInfo == 0) {
+            log (TEXT("jcls_PluginInfo == 0"));
+            return;
+        }
+
+        const jfieldID fidFlags         = env->GetFieldID (jcls_PluginInfo, "flags", "J");
+        const jlong flags = env->GetLongField(jobj_PluginInfo, fidFlags);
+        Info->Flags = (PLUGIN_FLAGS)flags;
+
+        copyPluginMenuItem(&Info->DiskMenu, jcls_PluginInfo, jobj_PluginInfo, "diskMenu");
+        copyPluginMenuItem(&Info->PluginMenu, jcls_PluginInfo, jobj_PluginInfo, "pluginMenu");
+        copyPluginMenuItem(&Info->PluginConfig, jcls_PluginInfo, jobj_PluginInfo, "pluginConfig");
+
+        const jfieldID fidCommandPrefix = env->GetFieldID (jcls_PluginInfo, "commandPrefix", "Ljava/lang/String;");
+        const jstring jstr_CommandPrefix = (jstring)env->GetObjectField(jobj_PluginInfo, fidCommandPrefix);
+        if (jstr_CommandPrefix != 0) {
+            const wchar_t* s = (const wchar_t*)env->GetStringChars(jstr_CommandPrefix, 0);  // TODO release?
+            Info->CommandPrefix = s;
+        }
+    }
+    else {
+        log(TEXT("jobj_PluginInfo == 0"));
     }
 }
 

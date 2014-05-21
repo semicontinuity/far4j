@@ -1,9 +1,12 @@
 package org.farmanager.plugins.jdbc;
 
 import java.io.File;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.farmanager.api.AbstractPluginInstance;
+import org.farmanager.api.jni.PluginInfo;
+import org.farmanager.api.jni.PluginMenuItem;
 import org.farmanager.api.jni.UsedFromNativeCode;
 import org.farmanager.api.vfs.MultisessionVFSPlugin;
 
@@ -42,6 +45,15 @@ public class JDBCPlugin extends MultisessionVFSPlugin {
     @Override
     public String getCommandPrefix() {
         return "jdbc";
+    }
+
+    @Override
+    public PluginInfo getPluginInfo() {
+        final PluginInfo pluginInfo = new PluginInfo();
+        pluginInfo.setDiskMenu(new PluginMenuItem[] {
+                new PluginMenuItem(UUID.randomUUID(), "Disk menu")
+        });
+        return pluginInfo;
     }
 
     @Override
