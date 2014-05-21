@@ -103,31 +103,6 @@ public abstract class AbstractPlugin {
     // GetPluginInfo
     // =========================================================================
 
-    // FLAGS
-    /**
-     * Disables plugin parameters caching and forces FAR to always load the plugin when starting.
-     * Must be specified if it is necessary to change lines
-     * in "Disks", "Plugins" or "Plugins configuration" menus dynamically.
-     * This flag decreases efficiency of memory usage.
-     */
-    public static final int PF_PRELOAD = 0x0001;
-
-    /** Do not show the plugin in the "Plugin commands" menu called from panels. */
-    public static final int PF_DISABLEPANELS = 0x0002;
-
-    /** Show the plugin in the "Plugin commands" menu called from FAR editor. */
-    public static final int PF_EDITOR = 0x0004;
-
-    /** Show the plugin in the "Plugin commands" menu called from FAR viewer. */
-    public static final int PF_VIEWER = 0x0008;
-
-    /**
-     * Forces FAR to pass to the plugin the full command line with the prefix.
-     * It is necessary to use this flag when a plugin can handle multiple command line prefixes.
-     */
-    public static final int PF_FULLCMDLINE = 0x0010;
-
-
     /**
      * FAR calls exported function GetPluginInfo, that should fill PluginInfo structure.
      * The exported function calls this method to get value for "Flags" field.
