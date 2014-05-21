@@ -51,7 +51,7 @@ public class JDBCPlugin extends MultisessionVFSPlugin {
     public PluginInfo getPluginInfo() {
         final PluginInfo pluginInfo = new PluginInfo();
         pluginInfo.setDiskMenu(new PluginMenuItem[] {
-                new PluginMenuItem(UUID.randomUUID(), "Disk menu")
+                new PluginMenuItem(UUID.randomUUID(), "Database")
         });
         return pluginInfo;
     }
@@ -62,7 +62,7 @@ public class JDBCPlugin extends MultisessionVFSPlugin {
     }
 
     public final File templatesFolder() {
-        final File templatesDir = new File(pluginLocalSettingsFolder(), "templates");
+        final File templatesDir = new File(pluginSettingsFolder(), "templates");
         if (!templatesDir.exists() || !templatesDir.isDirectory()) {
             throw new IllegalStateException("Cannot find the folder with a list of templates!");
         }

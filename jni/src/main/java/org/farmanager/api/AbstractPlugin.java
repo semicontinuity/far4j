@@ -1,14 +1,12 @@
 package org.farmanager.api;
 
+import java.io.File;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.farmanager.api.jni.PluginInfo;
-import org.farmanager.api.jni.UsedFromNativeCode;
 import org.farmanager.api.jni.ReturnCodes;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.farmanager.api.jni.UsedFromNativeCode;
 
 
 /**
@@ -22,13 +20,7 @@ import java.io.IOException;
  */
 @SuppressWarnings({"ClassWithTooManyMethods"})
 @UsedFromNativeCode
-public abstract class AbstractPlugin
-{
-    static {
-
-        DOMConfigurator.configure(
-                new File("C:\\Users\\igorkarpov\\AppData\\Local\\Temp", "log4j.xml").getAbsolutePath());
-    }
+public abstract class AbstractPlugin {
     public static Logger LOGGER = Logger.getLogger(AbstractPlugin.class);
 
 
@@ -36,20 +28,20 @@ public abstract class AbstractPlugin
     protected File module;
 
     /** Plugin folder */
-    protected File home;
+    protected File homeFolder;
 
     @UsedFromNativeCode
     public static AbstractPlugin instance() throws Exception {
-        LOGGER.info("@ instance");
+//        LOGGER.info("@ instance");
         try {
             final Class<?> aClass = Class.forName("org.farmanager.plugins.jdbc.JDBCPlugin");
-            LOGGER.info("Class loaded");
+//            LOGGER.info("Class loaded");
             return (AbstractPlugin) aClass.newInstance();
         } catch (Exception e) {
             LOGGER.error(e, e);
             throw e;
         } finally {
-            LOGGER.info("< instance");
+//            LOGGER.info("< instance");
         }
     }
 
@@ -63,7 +55,7 @@ public abstract class AbstractPlugin
      * @return Home directory of plugin, i.e. a folder under %FARHOME%\Plugins
      */
     public File getHome () {
-        return home;
+        return homeFolder;
     }
 
 
@@ -84,11 +76,12 @@ public abstract class AbstractPlugin
      * @param moduleName    module name (the full path to the far4j DLL file)
      */
     @UsedFromNativeCode
-    protected final void setModuleName (final String moduleName)
-    {
-        LOGGER.info("MN:" + moduleName);
+    protected final void setModuleName(final String moduleName) {
         this.module = new File (moduleName);
-        this.home = module.getParentFile ();
+        this.homeFolder = module.getParentFile();
+
+        DOMConfigurator.configure(
+                new File(pluginSettingsFolder(), "log4j.xml").getAbsolutePath());
 
         // Although dll is loaded, we call this
         // (perhaps some important linkage occurs)
@@ -176,6 +169,26 @@ public abstract class AbstractPlugin
     {
         // No command prefix by default
         return null;
+    }
+
+    public final File pluginSettingsFolder() {
+        final File farProfileFolder = localProfileFolder();
+        final String pluginName = homeFolder.getName();
+
+        final File far4jSettingsFolder = new File(farProfileFolder, "far4j");
+        final File pluginSettingsFolder = new File(far4jSettingsFolder, pluginName);
+
+        if (!pluginSettingsFolder.exists() || !pluginSettingsFolder.isDirectory())
+            throw new IllegalStateException("Cannot find plugin settings folder " + pluginSettingsFolder);
+        return pluginSettingsFolder;
+    }
+
+    public File localProfileFolder() {
+        final String farProfileEnv = System.getenv().get("FARLOCALPROFILE");
+        final File farProfileFolder = new File(farProfileEnv);
+        if (!farProfileFolder.isDirectory())
+            throw new IllegalStateException("%FARLOCALPROFILE% folder does not exist!");
+        return farProfileFolder;
     }
 
 

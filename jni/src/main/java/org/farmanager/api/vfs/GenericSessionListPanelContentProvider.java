@@ -41,7 +41,7 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
         this.title = title;
         this.plugin = plugin;
         this.listener = listener;
-        this.rootSessionsFolder = new File(plugin.pluginLocalSettingsFolder(), "sessions");
+        this.rootSessionsFolder = new File(plugin.pluginSettingsFolder(), "sessions");
         this.currentSessionsFolder = rootSessionsFolder;
     }
 

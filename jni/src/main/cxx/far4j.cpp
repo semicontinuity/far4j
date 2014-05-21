@@ -259,9 +259,6 @@ log ("| Problem 1!");
         log (TEXT("jcls_PluginPanelItem == 0"));
         return;
     }
-
-
-    log (TEXT("| OK"));
 }
 
 
