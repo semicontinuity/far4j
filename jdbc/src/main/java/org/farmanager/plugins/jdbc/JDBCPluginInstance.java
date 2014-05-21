@@ -76,8 +76,11 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
     }
 
     public Properties loadTemplate(final String name, final Properties parameters) throws IOException {
+        LOGGER.info("Loading template " + name + " with properties " + parameters);
         // quick and dirty
-        final File file = new File(plugin.templatesFolder(), name);
+        final File templatesFolder = plugin.templatesFolder();
+        LOGGER.info("templatesFolder " + templatesFolder);
+        final File file = new File(templatesFolder, name);
         final FileInputStream inputStream = new FileInputStream(file);
         final byte[] bytes = new byte[(int) file.length()];
         inputStream.read(bytes);
@@ -93,6 +96,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
 
         final Properties properties = new Properties();
         properties.load(new ByteArrayInputStream(result.getBytes()));
+        LOGGER.info("Loaded template " + name);
         return properties;
     }
 }

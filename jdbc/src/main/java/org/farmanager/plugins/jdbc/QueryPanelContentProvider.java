@@ -88,11 +88,13 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
 
 
     public void setView(final View view) {
+        LOGGER.info("Setting view: " + view);
         this.currentView = view;
         init(view.getProperties());
     }
 
     public void init(final Properties properties) {
+        LOGGER.info("Initializing from properties");
         this.properties = properties;
 
         loadDriver(properties.getProperty("driver"));
@@ -271,18 +273,15 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         return intPropertySafe(properties, "namecolumn");
     }
 
-    private static int keyColumn (Properties properties)
-    {
+    private static int keyColumn(final Properties properties) {
         return intPropertySafe(properties, "key-column");
     }
 
     private static int intPropertySafe (final Properties properties, final String key) {
-        try
-        {
+        try {
             return Integer.parseInt(properties.getProperty(key));
         }
-        catch (NumberFormatException e)
-        {
+        catch (NumberFormatException e) {
             return -1;
         }
     }
@@ -675,21 +674,27 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
                     setView(parent);
             } else {
                 if (childTemplate != null) {
-                    Properties childProperties = new Properties();
-                    for (Object key : properties.keySet()) {
-                        final String propertyName = (String) key;
-                        if (propertyName.startsWith("child."))
-                            childProperties.put(propertyName.substring("child.".length()), properties.get(key));
+                    LOGGER.info("Has child template:: " + childTemplate);
+                    try {
+                        final Properties childProperties = new Properties();
+                        for (Object key : properties.keySet()) {
+                            final String propertyName = (String) key;
+                            if (propertyName.startsWith("child."))
+                                childProperties.put(propertyName.substring("child.".length()), properties.get(key));
+                            LOGGER.debug(".");
+                        }
+                        LOGGER.debug("#");
+
+                        childProperties.put("main-id", childKey());
+
+                        final View childView = new View(
+                                instance.loadTemplate(childTemplate, childProperties),
+                                currentView);
+
+                        setView(childView);
+                    } catch (IOException e) {
+                        LOGGER.error(e, e);
                     }
-
-                    childProperties.put("main-id", childKey());
-                    childProperties = instance.loadTemplate(childTemplate, childProperties);
-
-                    final View childView = new View(
-                            childProperties,
-                            currentView);
-
-                    setView(childView);
                 }
             }
         } catch (Exception e) {
@@ -697,15 +702,14 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         }
     }
 
-    private String childKey () {
+    private String childKey() {
         final int index = keyColumn(properties);
-        if (index == -1)
-        {
+        if (index == -1) {
             return String.valueOf(AbstractPlugin.getSelectedItemCrc32());
         }
-        else
-        {
-            return AbstractPlugin.getSelectedItem();
+        else {
+            final int currentItem = AbstractPlugin.getCurrentItem();
+            return pluginPanelItems[currentItem - 1].cFileName;
         }
     }
 

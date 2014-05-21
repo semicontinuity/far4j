@@ -138,7 +138,7 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
      */
     @Override
     public long getFlags() {
-        LOGGER.debug("Add dots");
+//        LOGGER.debug("Add dots");
         return OpenPanelInfoFlags.OPIF_SHOWPRESERVECASE | OpenPanelInfoFlags.OPIF_ADDDOTS;
     }
 
@@ -147,14 +147,14 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
 
     @Override
     public int processKey(int key, int controlState) {
-        LOGGER.info("processKey " + Integer.toHexString(key) + " " + Integer.toHexString(controlState));
+//        LOGGER.info("processKey " + Integer.toHexString(key) + " " + Integer.toHexString(controlState));
 //        return panelContentProvider.processKey(key, controlState);
         return 0;
     }
 
     @Override
     public int processEvent(int i1, int i2, int key, int controlState) {
-        LOGGER.info("processEvent " + Integer.toHexString(i1) + ' ' + Integer.toHexString(i2) + ' ' + Integer.toHexString(key) + " " + Integer.toHexString(controlState));
+//        LOGGER.info("processEvent " + Integer.toHexString(i1) + ' ' + Integer.toHexString(i2) + ' ' + Integer.toHexString(key) + " " + Integer.toHexString(controlState));
         return panelContentProvider.processKey(key, controlState);
 //        return 0;
     }
