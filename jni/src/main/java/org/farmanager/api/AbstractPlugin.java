@@ -2,6 +2,7 @@ package org.farmanager.api;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.farmanager.api.jni.PluginInfo;
 import org.farmanager.api.jni.UsedFromNativeCode;
 import org.farmanager.api.jni.ReturnCodes;
 
@@ -50,6 +51,11 @@ public abstract class AbstractPlugin
         } finally {
             LOGGER.info("< instance");
         }
+    }
+
+    @UsedFromNativeCode
+    public PluginInfo getPluginInfo() {
+        return null;
     }
 
     /**

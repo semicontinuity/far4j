@@ -265,8 +265,7 @@ log ("| Problem 1!");
 }
 
 
-void WINAPI GetPluginInfoW(struct PluginInfo *Info)
-{
+void WINAPI GetPluginInfoW(struct PluginInfo *Info) {
 	Info->StructSize=sizeof(*Info);
 	Info->Flags=PF_EDITOR;
 	static const wchar_t *PluginMenuStrings[1];
@@ -274,6 +273,17 @@ void WINAPI GetPluginInfoW(struct PluginInfo *Info)
 	Info->PluginMenu.Guids=&MenuGuid;
 	Info->PluginMenu.Strings=PluginMenuStrings;
 	Info->PluginMenu.Count=ARRAYSIZE(PluginMenuStrings);
+
+    const jmethodID jmid_getPluginInfo = env->GetMethodID (jcls_AbstractPlugin, "getPluginInfo", "()Lorg/farmanager/api/jni/PluginInfo;");
+    if (jmid_getPluginInfo == 0) {
+        log(TEXT("jmid_getPluginInfo := 0"));
+        return;
+    }
+    const jobject jobj_PluginInfo = env->CallObjectMethod (jobj_PluginReference, jmid_getPluginInfo);
+    if (jmid_getPluginInfo == 0) {
+        log(TEXT("jobj_PluginInfo := 0"));
+        return;
+    }
 }
 
 
