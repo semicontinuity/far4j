@@ -120,7 +120,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         LOGGER.info("Defaults query=" + query);
         if (query == null) return;
 
-        int columnCount = Integer.parseInt(properties.getProperty("insert.query.param.count"));
+        int columnCount = Integer.parseInt(properties.getProperty("insert.query.param.count", "0"));
         // TODO: dummy parameter
         final PluginPanelItem[] panelItems = executeQuery(query, new HashMap<Integer, String[]>(), columnCount);
         defaults = panelItems[0].customColumns;

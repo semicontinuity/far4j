@@ -103,49 +103,6 @@ public abstract class AbstractPlugin {
     // GetPluginInfo
     // =========================================================================
 
-    /**
-     * FAR calls exported function GetPluginInfo, that should fill PluginInfo structure.
-     * The exported function calls this method to get value for "Flags" field.
-     *
-     * @return Combination of the PF_* constants to be propagated into PluginInfo structure
-     */
-    @UsedFromNativeCode
-    public int getFlags ()
-    {
-        // no special flags by default
-        return 0;
-    }
-
-    /**
-     * FAR calls exported function GetPluginInfo, that should fill PluginInfo structure.
-     * The exported function calls this method
-     * to get value for "PluginMenuStrings" and "PluginMenuStringsNumber" fields.
-     *
-     * @return a list of strings that will go to Plugin commands menu
-     */
-    @UsedFromNativeCode
-    public String[] getPluginMenu ()
-    {
-        // No plugin menu by default
-        return null;
-    }
-
-
-    /** @return a list of strings that will go to Plugin config menu */
-    @UsedFromNativeCode
-    public String[] getPluginConfigMenu ()
-    {
-        // No plugin config menu by default
-        return null;
-    }
-
-    @UsedFromNativeCode
-    public String getCommandPrefix ()
-    {
-        // No command prefix by default
-        return null;
-    }
-
     public final File pluginSettingsFolder() {
         final File farProfileFolder = localProfileFolder();
         final String pluginName = homeFolder.getName();
