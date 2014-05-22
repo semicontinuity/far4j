@@ -25,7 +25,7 @@ public class JDBCPlugin extends MultisessionVFSPlugin {
     }
 
     // =========================================================================
-    // GetPluginInfo
+    // GetPluginInfoW
     // =========================================================================
 
     @Override
@@ -34,6 +34,7 @@ public class JDBCPlugin extends MultisessionVFSPlugin {
         pluginInfo.setDiskMenu(new PluginMenuItem[] {
                 new PluginMenuItem(UUID.randomUUID(), "Database")
         });
+        pluginInfo.setCommandPrefix("db");
         return pluginInfo;
     }
 

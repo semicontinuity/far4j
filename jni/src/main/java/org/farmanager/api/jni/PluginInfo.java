@@ -47,6 +47,9 @@ public class PluginInfo {
     @UsedFromNativeCode
     private PluginMenuItem[] pluginConfig;
 
+    /**
+     * A colon-separated string of command line prefixes.
+     */
     @UsedFromNativeCode
     private String commandPrefix;
 

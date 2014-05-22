@@ -226,7 +226,7 @@ log ("| Problem 1!");
         log (TEXT("jmid_setModuleName := 0"));
         return;
     }
-    jstring jstr_ModuleName = env->NewString ((const jchar*) psi->ModuleName, _tcslen(psi->ModuleName));
+    jstring jstr_ModuleName = env->NewString((const jchar*) psi->ModuleName, (jsize)_tcslen(psi->ModuleName));
     env->CallVoidMethod (jobj_PluginReference, jmid_setModuleName, jstr_ModuleName);
 
 
@@ -367,6 +367,11 @@ void WINAPI GetPluginInfoW(struct PluginInfo *Info) {
         copyPluginMenuItem(&Info->PluginConfig, jcls_PluginInfo, jobj_PluginInfo, "pluginConfig");
 
         const jfieldID fidCommandPrefix = env->GetFieldID (jcls_PluginInfo, "commandPrefix", "Ljava/lang/String;");
+        if (fidCommandPrefix == 0) {
+            log (TEXT("fidCommandPrefix == 0"));
+            return;
+        }
+
         const jstring jstr_CommandPrefix = (jstring)env->GetObjectField(jobj_PluginInfo, fidCommandPrefix);
         if (jstr_CommandPrefix != 0) {
             const wchar_t* s = (const wchar_t*)env->GetStringChars(jstr_CommandPrefix, 0);  // TODO release?
@@ -981,7 +986,7 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_getCurrentItem(JNI
     struct PanelInfo panelInfo;
     if (Info.PanelControl(PANEL_ACTIVE, FCTL_GETPANELINFO, 0, &panelInfo) == FALSE) return -1;
 
-    return panelInfo.CurrentItem;
+    return (jint)panelInfo.CurrentItem;
 }
 
 JNIEXPORT jstring JNICALL Java_org_farmanager_api_AbstractPlugin_getAnotherPanelDirectory(JNIEnv *, jclass)
