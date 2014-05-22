@@ -103,9 +103,16 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
     @Override
     public PluginPanelItem[] getFindData(final int opMode) {
         LOGGER.info("getFindData " + opMode);
-        final PluginPanelItem[] findData = panelContentProvider.getFindData(opMode);
-        LOGGER.info("getFindData returns " + findData.length + " entries");
-        return findData;
+
+        final PluginPanelItem[] findData;
+        try {
+            findData = panelContentProvider.getFindData(opMode);
+            LOGGER.info("getFindData returns " + findData.length + " entries");
+            return findData;
+        } catch (Exception e) {
+            LOGGER.error(e,e);
+            return null;
+        }
     }
 
     @Override

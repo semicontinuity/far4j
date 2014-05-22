@@ -13,6 +13,10 @@ import org.farmanager.api.panels.NamedColumnDescriptor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -31,7 +35,9 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     private String title;
     private File rootSessionsFolder;
     private File rootSessionsFolder1;
-    private File currentSessionsFolder;
+//    private File currentSessionsFolder;
+
+    private List<String> currentPath = new ArrayList<String>();
 
 
     public GenericSessionListPanelContentProvider (
@@ -46,7 +52,7 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
         this.rootSessionsFolder1 = rootSessionsFolder;
 //        this.rootSessionsFolder1 = new File("c:");
 //        this.rootSessionsFolder = new File("c:");
-        this.currentSessionsFolder = rootSessionsFolder1;
+//        this.currentSessionsFolder = rootSessionsFolder1;
     }
 
     public PanelMode[] getPanelModes () {
@@ -79,7 +85,9 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     {
         LOGGER.info ("opMode = " + opMode);
 
-        final String[] sessions = currentSessionsFolder.list ();
+        final File currentFolder = new File(rootSessionsFolder, concat(currentPath, '/'));
+        LOGGER.debug("currentFolder: " + currentFolder);
+        final String[] sessions = /*currentSessionsFolder.list()*/currentFolder.list();
         final PluginPanelItem[] pluginPanelItems = new PluginPanelItem[sessions.length];
         for (int i = 0; i < sessions.length; i++)
         {
@@ -93,31 +101,36 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     }
 
 
-    public void setDirectory (String directory) {
+    public void setDirectory(final String directory) {
         LOGGER.info("setDirectory " + directory);
         if ("..".equals (directory))
         {
-            LOGGER.info("currentSessionsFolder=" + currentSessionsFolder);
-            LOGGER.info("rootSessionsFolder=" + rootSessionsFolder1);
-            LOGGER.info("?" + currentSessionsFolder.equals(rootSessionsFolder1));
-            if (currentSessionsFolder.equals(rootSessionsFolder1)) {
+//            LOGGER.info("currentSessionsFolder=" + currentSessionsFolder);
+//            LOGGER.info("rootSessionsFolder=" + rootSessionsFolder1);
+//            LOGGER.info("?" + currentSessionsFolder.equals(rootSessionsFolder1));
+            if (/*currentSessionsFolder.equals(rootSessionsFolder1)*/currentPath.isEmpty()) {
                 AbstractPlugin.closePlugin ();
             }
             else {
-                currentSessionsFolder = currentSessionsFolder.getParentFile();
+                currentPath.remove(currentPath.size() - 1);
+//                currentSessionsFolder = currentSessionsFolder.getParentFile();
             }
             return;
         }
 
         try {
-            final File target = new File(currentSessionsFolder, directory);
+            currentPath.addAll (Arrays.asList(directory.split("/")));
+            LOGGER.debug("cp: " + currentPath);
+//            final File target = new File(currentSessionsFolder, directory);
+            final File target = new File(rootSessionsFolder, concat(currentPath, '/'));
             if (target.isFile()) {
                 LOGGER.debug("Opening session");
+                currentPath.remove(currentPath.size() - 1); // switching filesystem...
                 listener.openSession(loadSession(target));
             }
             else {
                 LOGGER.debug("Opening sublist");
-                currentSessionsFolder = target;
+//                currentSessionsFolder = target;
             }
         }
         catch (Exception e) {
@@ -138,12 +151,25 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
 
 
     public String getCurrentDirectory() {
-        return currentSessionsFolder.getPath();
+        return concat(currentPath, '/');
+//        return currentSessionsFolder.getPath();
     }
 
 
     public static interface Listener {
         /** Invoked when a user wants to open a session for a session list panel */
         void openSession(final Properties properties) throws Exception;
+    }
+
+
+    public static String concat(final Collection<? extends CharSequence> words, final char delimiter) {
+        final StringBuilder wordList = new StringBuilder();
+        if (words.size() > 0) {
+            for (CharSequence word : words) {
+                wordList.append(word).append(delimiter);
+            }
+            wordList.setLength(wordList.length() - 1);
+        }
+        return wordList.toString();
     }
 }
