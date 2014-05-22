@@ -126,7 +126,7 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     }
 
     protected Properties loadSession(File target) throws IOException {
-        final Properties properties = new Properties ();
+        final Properties properties = new Properties();
         final FileInputStream fileInputStream = new FileInputStream (target);
         properties.load (fileInputStream);
         fileInputStream.close ();
@@ -134,14 +134,13 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     }
 
 
-    public String getCurrentDirectory()
-    {
+    public String getCurrentDirectory() {
         return currentSessionsFolder.getPath();
     }
 
-    public static interface Listener
-    {
-        /** Invoked when a used wans to open a session for a session list panel */
-        void openSession (final Properties properties) throws Exception;
+
+    public static interface Listener {
+        /** Invoked when a user wants to open a session for a session list panel */
+        void openSession(final Properties properties) throws Exception;
     }
 }

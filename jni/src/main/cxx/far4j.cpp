@@ -615,6 +615,13 @@ intptr_t WINAPI SetDirectoryW(
 }
 
 
+/**
+ * GetOpenPanelInfoW
+ * Fills the provided struct OpenPanelInfo:
+ *   Flags = pluginInstance.getFlags()
+ *   HostFile = pluginInstance.getHostFile()
+ *   CurDir = pluginInstance.getCurDir()
+ */
 void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
     PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (openPluginInfo->hPanel);
     jobject jobj_PluginInstance = data->instance;

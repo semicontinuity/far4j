@@ -41,7 +41,9 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
      */
     @Override
     public String getCurDir() {
-        return panelContentProvider.getCurrentDirectory();
+        final String currentDirectory = panelContentProvider.getCurrentDirectory();
+        LOGGER.info("currentDirectory: " + currentDirectory);
+        return currentDirectory;
     }
 
 
