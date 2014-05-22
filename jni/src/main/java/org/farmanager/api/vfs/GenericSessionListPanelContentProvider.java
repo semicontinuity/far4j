@@ -30,6 +30,7 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
     private Listener listener;
     private String title;
     private File rootSessionsFolder;
+    private File rootSessionsFolder1;
     private File currentSessionsFolder;
 
 
@@ -42,11 +43,13 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
         this.plugin = plugin;
         this.listener = listener;
         this.rootSessionsFolder = new File(plugin.pluginSettingsFolder(), "sessions");
-        this.currentSessionsFolder = rootSessionsFolder;
+        this.rootSessionsFolder1 = rootSessionsFolder;
+//        this.rootSessionsFolder1 = new File("c:");
+//        this.rootSessionsFolder = new File("c:");
+        this.currentSessionsFolder = rootSessionsFolder1;
     }
 
-    public PanelMode[] getPanelModes ()
-    {
+    public PanelMode[] getPanelModes () {
         if (PANEL_MODES == null)
         {
             PANEL_MODES = new PanelMode[1];
@@ -95,9 +98,9 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
         if ("..".equals (directory))
         {
             LOGGER.info("currentSessionsFolder=" + currentSessionsFolder);
-            LOGGER.info("rootSessionsFolder=" + rootSessionsFolder);
-            LOGGER.info("?" + currentSessionsFolder.equals(rootSessionsFolder));
-            if (currentSessionsFolder.equals(rootSessionsFolder)) {
+            LOGGER.info("rootSessionsFolder=" + rootSessionsFolder1);
+            LOGGER.info("?" + currentSessionsFolder.equals(rootSessionsFolder1));
+            if (currentSessionsFolder.equals(rootSessionsFolder1)) {
                 AbstractPlugin.closePlugin ();
             }
             else {
@@ -107,7 +110,7 @@ public class GenericSessionListPanelContentProvider extends AbstractPanelContent
         }
 
         try {
-            final File target = new File (currentSessionsFolder, directory);
+            final File target = new File(currentSessionsFolder, directory);
             if (target.isFile()) {
                 LOGGER.debug("Opening session");
                 listener.openSession(loadSession(target));

@@ -15,7 +15,7 @@ import org.farmanager.api.jni.FarInfoPanelLine;
 public abstract class AbstractPluginInstance
 {
     /**
-     * Initialized to command line, if plugin was initialized form the command line
+     * Initialized to command line, if plugin was initialized from the command line
      */
     @UsedFromNativeCode
     protected String commandLine;
@@ -67,12 +67,12 @@ public abstract class AbstractPluginInstance
     }
 
     // =========================================================================
-    // GetOpenPluginInfo
+    // GetOpenPanelInfoW
     // =========================================================================
 
 
     /**
-     * Related to FAR exported function GetOpenPanelInfo
+     * Related to FAR exported function GetOpenPanelInfoW
      *
      * @return Combination of the OPIF_* constants
      */
@@ -82,56 +82,53 @@ public abstract class AbstractPluginInstance
     }
 
     /**
-     * Related to FAR exported function GetOpenPluginInfo
+     * Related to FAR exported function GetOpenPanelInfoW
      *
      * @return Name of the file used to emulate the file system.
      *         If plugin does not emulate a file system based on a file, set this variable to NULL.
      */
     @UsedFromNativeCode
-    public String getHostFile ()
-    {
+    public String getHostFile () {
         return null;
     }
 
-    /** Related to FAR exported function GetOpenPluginInfo */
+    /** Related to FAR exported function GetOpenPanelInfoW */
     @UsedFromNativeCode
-    public String getCurDir ()
-    {
+    public String getCurDir () {
         return null;
     }
 
-    /** Related to FAR exported function GetOpenPluginInfo */
+    /** Related to FAR exported function GetOpenPanelInfoW */
     @UsedFromNativeCode
     public String getFormat ()
     {
         return null;
     }
 
-    /** Related to FAR exported function GetOpenPluginInfo */
+    /** Related to FAR exported function GetOpenPanelInfoW */
     @UsedFromNativeCode
     public String getPanelTitle ()
     {
         return null;
     }
 
-    /** Related to FAR exported function GetOpenPluginInfo */
+    /** Related to FAR exported function GetOpenPanelInfoW */
     @UsedFromNativeCode
     public PanelMode[] getPanelModes ()
     {
         return null;
     }
 
-    /** Related to FAR exported function GetOpenPluginInfo */
+    /** Related to FAR exported function GetOpenPanelInfoW */
     @UsedFromNativeCode
     public int getStartPanelMode ()
     {
         return 0;
     }
 
-    /** Related to FAR exported function GetOpenPluginInfo */
+    /** Related to FAR exported function GetOpenPanelInfoW */
     @UsedFromNativeCode
-    public FarInfoPanelLine[] getInfoPanelLines ()
-    {
+    public FarInfoPanelLine[] getInfoPanelLines () {
         // no info panel lines by default
         return null;
     }
@@ -147,8 +144,7 @@ public abstract class AbstractPluginInstance
      * of the proper plugin instance object.
      */
     @UsedFromNativeCode
-    public void setDirectory (final String directory)
-    {
+    public void setDirectory (final String directory) {
         // do nothing by default
     }
 

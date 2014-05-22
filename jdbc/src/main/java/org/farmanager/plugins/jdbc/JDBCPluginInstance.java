@@ -23,7 +23,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
     private final QueryPanelContentProvider queryPanelContentProvider;
 
 
-    public JDBCPluginInstance(JDBCPlugin plugin) throws Exception {
+    public JDBCPluginInstance(final JDBCPlugin plugin) throws Exception {
         LOGGER.debug("> <init>");
         try {
             this.plugin = plugin;
@@ -53,11 +53,18 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
         }
     }
 
+//    @Override
+//    public String getHostFile() {
+//        return plugin.pluginSettingsFolder().toString();
+//    }
+
+    @Override
     public void navigateToSessionList() {
         LOGGER.debug("navigateToSessionList");
         panelContentProvider = sessionListPanelContentProvider;
     }
 
+    @Override
     public void openSession(final Properties properties) throws IOException {
 //        queryPanelContentProvider.init(properties);
 //        navigateToQueryResult();

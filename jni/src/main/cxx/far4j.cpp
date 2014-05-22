@@ -650,9 +650,11 @@ void WINAPI GetOpenPanelInfoW(struct OpenPanelInfo *openPluginInfo) {
     jmethodID jmid_PluginInstance_getHostFile = env->GetMethodID (
         jcls_AbstractPluginInstance, "getHostFile", "()Ljava/lang/String;");
 //    log ("| jmid_PluginInstance_getHostFile=", (int)jmid_PluginInstance_getHostFile);
-    if (jmid_PluginInstance_getHostFile== NULL) return; // TODO
-//    log ("| CallObjectMethod getHostFile");
-    jstring jstr_HostFile = (jstring)env->CallObjectMethod (jobj_PluginInstance, jmid_PluginInstance_getHostFile);
+    if (jmid_PluginInstance_getHostFile== NULL) {
+        log(TEXT("jmid_PluginInstance_getHostFile := 0"));
+        return;
+    }
+    const jstring jstr_HostFile = (jstring)env->CallObjectMethod (jobj_PluginInstance, jmid_PluginInstance_getHostFile);
     openPluginInfo->HostFile   = jstr_HostFile == NULL ? NULL : (const _TCHAR*)env->GetStringChars(jstr_HostFile, 0); // TODO not released!
 
     // CurDir
