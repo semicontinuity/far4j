@@ -4,11 +4,14 @@ import org.apache.log4j.Logger;
 import org.farmanager.api.vfs.GenericSessionListPanelContentProvider;
 import org.farmanager.api.vfs.MultiVirtualFSPluginInstance;
 import org.farmanager.plugins.jdbc.queries.GroovyQueryLoader;
+import org.farmanager.plugins.jdbc.queries.OLQueryLoader;
+import org.farmanager.plugins.jdbc.queries.Query;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -42,7 +45,12 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
                             : properties;
                 }
             };
-            this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this, new GroovyQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries")));
+            final List<Query> queries1 = new OLQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries1"));
+            final List<Query> queries =
+                    new GroovyQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries"));
+
+            queries.addAll(queries1);
+            this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this, queries);
 
         }
         catch (Exception e) {

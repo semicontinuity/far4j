@@ -1192,26 +1192,25 @@ JNIEXPORT jint JNICALL Java_org_farmanager_api_AbstractPlugin_dialog
 
 
                     memset(listItems->Items, 0, sizeof(FarListItem)*listItemsNumber);
-                    jclass jcls_FLI = env->FindClass ("org/farmanager/api/jni/FarListItem");
-                    jfieldID fidFLIText   = env->GetFieldID (jcls_FLI,  "text", "Ljava/lang/String;");
-                    jfieldID fidFLIFlags = env->GetFieldID (jcls_FLI,  "flags", "I");
+                    const jclass jcls_FLI = env->FindClass ("org/farmanager/api/jni/FarListItem");
+                    const jfieldID fidFLIText   = env->GetFieldID (jcls_FLI,  "text", "Ljava/lang/String;");
+                    const jfieldID fidFLIFlags = env->GetFieldID (jcls_FLI,  "flags", "I");
 
-                    for (int itemNumber = 0; itemNumber < listItemsNumber; itemNumber++)
-                    {
-                       jobject j_fli = env->GetObjectArrayElement (j_listItems, itemNumber);
+                    for (int itemNumber = 0; itemNumber < listItemsNumber; itemNumber++) {
+                       const jobject j_fli = env->GetObjectArrayElement(j_listItems, itemNumber);
                        //log ("far list item: ", (int)j_fli);
 
                        // FarListItem.Text
                        // -----------------------------------------------------------------------------------     
-                       jstring j_fli_text = (jstring) env->GetObjectField (j_fli, fidFLIText);
-                       const wchar_t* fli_text = (const wchar_t*)env->GetStringUTFChars (j_fli_text, 0);
+                       const jstring j_fli_text = (jstring) env->GetObjectField (j_fli, fidFLIText);
+                       const wchar_t* fli_text = (const wchar_t*)env->GetStringChars (j_fli_text, 0);
                        //strcpy (listItems->Items[itemNumber].Text, fli_text);
                        //env->ReleaseStringUTFChars (j_fli_text, fli_text);
                        listItems->Items[itemNumber].Text = fli_text;
 
                        // FarListItem.Flags
                        // -----------------------------------------------------------------------------------     
-                       jint j_fli_flags = env->GetIntField (j_fli, fidFLIFlags);
+                       const jint j_fli_flags = env->GetIntField(j_fli, fidFLIFlags);
                        listItems->Items[itemNumber].Flags = j_fli_flags;
 
                        // FarListItem.Reserved

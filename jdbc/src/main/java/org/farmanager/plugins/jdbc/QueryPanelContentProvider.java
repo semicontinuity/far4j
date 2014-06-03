@@ -567,6 +567,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         final String[] strings = new String[list.size()];
         for (int i = 0; i < strings.length; i++) {
             strings[i] = list.get(i).getTitle();
+            LOGGER.debug(strings[i]);
         }
         return strings;
     }
