@@ -45,11 +45,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
                             : properties;
                 }
             };
-            final List<Query> queries1 = new OLQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries1"));
-            final List<Query> queries =
-                    new GroovyQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries"));
-
-            queries.addAll(queries1);
+            final List<Query> queries = new OLQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries1"));
             this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this, queries);
 
         }

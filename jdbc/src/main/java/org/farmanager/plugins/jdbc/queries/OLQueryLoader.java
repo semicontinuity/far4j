@@ -30,9 +30,9 @@ public class OLQueryLoader {
 
         final List<Query> queries = new ArrayList<>();
         for (File file : files) {
+            LOGGER.info("Loading query from " + file);
             try {
                 final Query query = (Query) engine.eval(new BufferedReader(new FileReader(file)), javaBindings);
-                LOGGER.debug(query);
                 queries.add(query);
             }
             catch (Throwable e) {
