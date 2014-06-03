@@ -1,29 +1,28 @@
 package org.farmanager.plugins.jdbc.queries;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import org.apache.log4j.Logger;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
+public class GroovyQueryLoader {
 
-public class QueryManager {
+    private static final Logger LOGGER = Logger.getLogger(GroovyQueryLoader.class);
 
-    private static final Logger LOGGER = Logger.getLogger(QueryManager.class);
-    private File directory;
 
-    private transient List<Query> queries = new ArrayList<Query>();
+    public List<Query> apply(final File directory) {
+        LOGGER.info("Loading queries from " + directory);
+        final File[] files = directory.listFiles();
+        if (files == null) throw new IllegalArgumentException();
 
-    public void setDirectory (final File directory) {
-        this.directory = directory;
-    }
-
-    public void create () {
-        for (File file : directory.listFiles()) {
+        final List<Query> queries = new ArrayList<>();
+        for (File file : files) {
             try {
                 queries.add(loadQuery(file));
             }
@@ -31,16 +30,11 @@ public class QueryManager {
                 LOGGER.error(e, e);
             }
         }
-
-        LOGGER.info(queries);
-    }
-
-    public List<Query> getQueries () {
         return queries;
     }
 
     private static Query loadQuery (final File file) throws IOException {
-        LOGGER.info("Processing groovy script " + file);
+//        LOGGER.info("Processing groovy script " + file);
 
         final Binding binding = new Binding();
         final CompilerConfiguration conf = new CompilerConfiguration();

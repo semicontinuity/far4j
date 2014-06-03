@@ -3,6 +3,7 @@ package org.farmanager.plugins.jdbc;
 import org.apache.log4j.Logger;
 import org.farmanager.api.vfs.GenericSessionListPanelContentProvider;
 import org.farmanager.api.vfs.MultiVirtualFSPluginInstance;
+import org.farmanager.plugins.jdbc.queries.GroovyQueryLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -41,7 +42,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
                             : properties;
                 }
             };
-            this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this);
+            this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this, new GroovyQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries")));
 
         }
         catch (Exception e) {

@@ -29,8 +29,8 @@ import org.farmanager.api.jni.ProcessKeyFlags;
 import org.farmanager.api.messages.Messages;
 import org.farmanager.api.panels.NamedColumnDescriptor;
 import org.farmanager.api.vfs.AbstractPanelContentProvider;
+import org.farmanager.plugins.jdbc.queries.GroovyQueryLoader;
 import org.farmanager.plugins.jdbc.queries.Query;
-import org.farmanager.plugins.jdbc.queries.QueryManager;
 
 import static org.farmanager.api.jni.KeyCodes.VK_F2;
 import static org.farmanager.api.jni.KeyCodes.VK_F4;
@@ -45,12 +45,6 @@ import static org.farmanager.api.jni.ProcessKeyFlags.shift;
 public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     private static final Logger LOGGER = Logger.getLogger(QueryPanelContentProvider.class);
 
-    /**
-     * In some reports, lines may have non-unique ids... take care of that
-     */
-    private Map<Integer, String[]> data;
-
-
     private String query;
     private String url;
     private int columnCount;
@@ -59,13 +53,12 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     private Properties properties;
     private FarInfoPanelLine[] infoPanelLines;
     private String[] defaults;
-    private AbstractPlugin plugin;
+
     private PluginPanelItem[] pluginPanelItems;
-    private JDBCPluginInstance instance;
+
 
     private static DecimalFormat format = new DecimalFormat("0000000000");
 
-    private QueryManager queryManager;
 
     /** If true, query results will be rendered as directories */
     private boolean navigatable;
@@ -73,17 +66,20 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     private View currentView;
 
 
-    public QueryPanelContentProvider(JDBCPlugin plugin, JDBCPluginInstance instance)
-    {
-        this.instance = instance;
-        this.plugin = plugin;
-        this.data = new HashMap<Integer, String[]> ();
+    private final AbstractPlugin plugin;
+    private final JDBCPluginInstance instance;
+    /**
+     * In some reports, lines may have non-unique ids... take care of that
+     */
+    private final Map<Integer, String[]> data;
+    private List<Query> queries;
 
-        queryManager = new QueryManager();
-        final File queries = new File(plugin.pluginSettingsFolder(), "queries");
-        LOGGER.info("queries dir: " + queries);
-        queryManager.setDirectory(queries);
-        queryManager.create();
+
+    public QueryPanelContentProvider(final JDBCPlugin plugin, final JDBCPluginInstance instance, List<Query> queries) {
+        this.plugin = plugin;
+        this.instance = instance;
+        this.data = new HashMap<>();
+        this.queries = queries;
     }
 
 
@@ -160,8 +156,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         LOGGER.info("getFindData " + opMode);
         // TODO: smarter: cache!
         fillInfoPanelLines();
-        pluginPanelItems = executeQuery(query, data, columnCount);
-        return pluginPanelItems;
+        return pluginPanelItems = executeQuery(query, data, columnCount);
     }
 
 
@@ -180,7 +175,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
             LOGGER.debug("Column count: " + columnCount);
             ResultSet rs = stmt.executeQuery(query);
 
-            final ArrayList<PluginPanelItem> items = new ArrayList<PluginPanelItem>();
+            final ArrayList<PluginPanelItem> items = new ArrayList<>();
             while (rs.next()) {
                 final PluginPanelItem pluginPanelItem = new PluginPanelItem();
                 // First column is ID
@@ -502,13 +497,18 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     }
 
     private int handleUpdate() {
+        LOGGER.debug("Update!");
         if (properties.getProperty("update.query") == null) {
             return 0;
         }
-        int selectedItemId = AbstractPlugin.getSelectedItemCrc32();
+        final int currentItem = AbstractPlugin.getCurrentItem();
+        int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
+
+//        int selectedItemId = AbstractPlugin.getSelectedItemCrc32();
         String[] selectedLineValues = data.get(selectedItemId);
         ParametersDialog dialog = new ParametersDialog(this, properties, "update", selectedLineValues);
         if (!dialog.activate()) {
+            LOGGER.debug("Update dialog dismissed");
             return 1;
         } else {
             String query = constructQuery("update.query", dialog.getParams(selectedItemId));
@@ -518,8 +518,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     }
 
 
-    private int handleFavorites ()
-    {
+    private int handleFavorites() {
         final String[] titles = favoriteQueriesTitles();
         if (titles.length == 0) return 0;
 
@@ -533,7 +532,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         {
 //            return handleInsert(
 //                "favorite.query." + dialog.selectedItem());
-            final Query query = queryManager.getQueries().get(dialog.selectedItem());
+            final Query query = queries.get(dialog.selectedItem());
             return query.handleInsert(this, defaults);
         }
     }
@@ -564,7 +563,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
         }
         return names;
 */
-        final List<Query> list = queryManager.getQueries();
+        final List<Query> list = queries;
         final String[] strings = new String[list.size()];
         for (int i = 0; i < strings.length; i++) {
             strings[i] = list.get(i).getTitle();
@@ -641,12 +640,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
             stmt.close();
             conn.close();
             infoPanelLines[i] = new FarInfoPanelLine(
-                    properties.getProperty(
-                            new StringBuilder()
-                                    .append("info.line.")
-                                    .append(i)
-                                    .append(".text").toString()
-                    ),
+                    properties.getProperty(String.format("info.line.%d.text", i)),
                     String.valueOf(object),
                     false
             );
