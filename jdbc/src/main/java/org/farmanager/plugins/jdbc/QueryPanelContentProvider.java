@@ -487,7 +487,8 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
             return 0;
         } else {
             if (new YesNoDialog("Delete", "Do you want to delete this record?", "OK", "Cancel").activate()) {
-                int selectedItemId = AbstractPlugin.getSelectedItemCrc32();
+                final int currentItem = AbstractPlugin.getCurrentItem();
+                int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
                 LOGGER.info("Going to delete column with id " + selectedItemId);
                 String query = constructQuery("delete.query", new Object[]{selectedItemId});
                 executeUpdate(query);
@@ -670,6 +671,11 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
             } else {
                 if (childTemplate != null) {
                     LOGGER.info("Has child template:: " + childTemplate);
+                    final String childKey = childKey();
+                    if (childKey == null) {
+                        LOGGER.info("No child key");
+                        return;
+                    }
                     try {
                         final Properties childProperties = new Properties();
                         for (Object key : properties.keySet()) {
@@ -678,9 +684,7 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
                                 childProperties.put(propertyName.substring("child.".length()), properties.get(key));
                             LOGGER.debug(".");
                         }
-                        LOGGER.debug("#");
-
-                        childProperties.put("main-id", childKey());
+                        childProperties.put("main-id", childKey);
 
                         final View childView = new View(
                                 instance.loadTemplate(childTemplate, childProperties),
@@ -700,11 +704,12 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     private String childKey() {
         final int index = keyColumn(properties);
         if (index == -1) {
-            return String.valueOf(AbstractPlugin.getSelectedItemCrc32());
+            final int currentItem = AbstractPlugin.getCurrentItem();
+            return pluginPanelItems[currentItem - 1].cFileName;
         }
         else {
             final int currentItem = AbstractPlugin.getCurrentItem();
-            return pluginPanelItems[currentItem - 1].cFileName;
+            return pluginPanelItems[currentItem - 1].customColumns[index];
         }
     }
 

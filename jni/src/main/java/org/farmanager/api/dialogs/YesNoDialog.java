@@ -1,16 +1,19 @@
 package org.farmanager.api.dialogs;
 
-public class YesNoDialog extends FarDialog
-{
+import org.apache.log4j.Logger;
+
+public class YesNoDialog extends FarDialog {
+    private static final Logger LOGGER = Logger.getLogger(YesNoDialog.class);
     private static final int BUTTONS_Y = 5;
-    private FarButton cancelButton;
     private static final int WIDTH = 76;
+    private FarButton cancelButton;
+
 
     public YesNoDialog(
-            final String title,
-            final String question,
-            final String yesButtonText,
-            final String noButtonText)
+        final String title,
+        final String question,
+        final String yesButtonText,
+        final String noButtonText)
     {
         x1 = -1;
         y1 = -1;
@@ -24,8 +27,8 @@ public class YesNoDialog extends FarDialog
         addItem (cancelButton);
     }
 
-    private static FarDoubleBox title(final String title)
-    {
+
+    private static FarDoubleBox title(final String title){
         final FarDoubleBox doubleBox = new FarDoubleBox ();
         doubleBox.x1 = 3;
         doubleBox.y1 = 1;
@@ -35,8 +38,7 @@ public class YesNoDialog extends FarDialog
         return doubleBox;
     }
 
-    private static FarText text(String s)
-    {
+    private static FarText text(final String s) {
         FarText farText = new FarText ();
         farText.setCenterText(true);
         farText.x1 = 5;
@@ -47,8 +49,7 @@ public class YesNoDialog extends FarDialog
         return farText;
     }
 
-    private static FarButton button(final String text, final int x)
-    {
+    private static FarButton button(final String text, final int x) {
         FarButton button = new FarButton ();
         button.data = text;
         button.x1 = x;
@@ -58,8 +59,10 @@ public class YesNoDialog extends FarDialog
         return button;
     }
 
-    public boolean activate ()
-    {
-        return (show () != -1) && !cancelButton.selected;
+    public boolean activate () {
+        LOGGER.debug("Activate");
+        final boolean b = show() == 2;
+        if (b) LOGGER.debug("Confirmed");
+        return b; // hardcode: button #2 is OK
     }
 }
