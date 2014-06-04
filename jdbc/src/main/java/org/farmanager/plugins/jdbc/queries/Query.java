@@ -66,6 +66,6 @@ public class Query {
     }
 
     private String construct (final ParametersDialog dialog) {
-        return (new MessageFormat(query)).format(dialog.getParams(null));
+        return String.format(query, dialog.getParams(null));
     }
 }
