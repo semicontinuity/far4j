@@ -11,7 +11,7 @@ import java.util.List;
  *         TODO: editing is not fully supported!
  */
 public class JDBCComboBox extends FarComboBox implements EditedValueProvider {
-    private static final Logger LOGGER = Logger.getLogger(QueryPanelContentProvider.class);
+    private static final Logger LOGGER = Logger.getLogger(QueryPanelContentProvider_Properties.class);
     //    private int[] ids;
     public String initialValue;
 

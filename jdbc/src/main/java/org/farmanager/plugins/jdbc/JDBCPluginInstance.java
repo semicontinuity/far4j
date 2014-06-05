@@ -5,15 +5,11 @@ import neutrino.script.PathBindings;
 import org.apache.log4j.Logger;
 import org.farmanager.api.vfs.GenericSessionListPanelContentProvider;
 import org.farmanager.api.vfs.MultiVirtualFSPluginInstance;
-import org.farmanager.plugins.jdbc.queries.GroovyQueryLoader;
-import org.farmanager.plugins.jdbc.queries.OLQueryLoader;
 import org.farmanager.plugins.jdbc.queries.Query;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +27,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
     protected final JDBCPlugin plugin;
 
     private final GenericSessionListPanelContentProvider sessionListPanelContentProvider;
-    private final QueryPanelContentProvider queryPanelContentProvider;
+    private final QueryPanelContentProvider_Properties queryPanelContentProvider;
 
 
     public JDBCPluginInstance(final JDBCPlugin plugin) throws Exception {
@@ -64,7 +60,7 @@ public class JDBCPluginInstance extends MultiVirtualFSPluginInstance
 
 
 //            final List<Query> queries = new OLQueryLoader().apply(new File(plugin.pluginSettingsFolder(), "queries1"));
-            this.queryPanelContentProvider = new QueryPanelContentProvider(plugin, this, favoriteQueries);
+            this.queryPanelContentProvider = new QueryPanelContentProvider_Properties(plugin, this, favoriteQueries);
 
         }
         catch (Exception e) {

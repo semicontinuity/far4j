@@ -29,7 +29,7 @@ public class ParametersDialog extends FarDialog {
      * @param selectedLineValues selected line values (only when editing)
      */
     public ParametersDialog(
-            final QueryPanelContentProvider provider,
+            final QueryPanelContentProvider_Properties provider,
             final Properties properties,
             final String prefix,
             final String[] selectedLineValues)
@@ -53,7 +53,7 @@ public class ParametersDialog extends FarDialog {
     }
 
     public ParametersDialog (
-            final QueryPanelContentProvider provider,
+            final QueryPanelContentProvider_Properties provider,
             final Query query,
             final String[] selectedLineValues)
     {
@@ -67,7 +67,7 @@ public class ParametersDialog extends FarDialog {
 
 
     private void init2 (
-            final QueryPanelContentProvider provider,
+            final QueryPanelContentProvider_Properties provider,
             final String[] selectedLineValues,
             final Query query) {
 
@@ -116,7 +116,7 @@ public class ParametersDialog extends FarDialog {
 
     private void addParameter (
             final String[] selectedLineValues,
-            final QueryPanelContentProvider provider, final int i,
+            final QueryPanelContentProvider_Properties provider, final int i,
 
             final String subQuery, final String subQueryType, final String data) {
 
@@ -177,7 +177,7 @@ public class ParametersDialog extends FarDialog {
             final Properties properties,
             final String prefix,
             final String[] selectedLineValues,
-            final QueryPanelContentProvider provider)
+            final QueryPanelContentProvider_Properties provider)
     {
         int count = Integer.parseInt(properties.getProperty(prefix + ".query.param.count"));
         parameterDataControls = new FarDialogItem[count];

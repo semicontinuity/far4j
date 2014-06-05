@@ -1,12 +1,11 @@
 package org.farmanager.plugins.jdbc.queries;
 
 import org.farmanager.plugins.jdbc.ParametersDialog;
-import org.farmanager.plugins.jdbc.QueryPanelContentProvider;
+import org.farmanager.plugins.jdbc.QueryPanelContentProvider_Properties;
 import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.text.MessageFormat;
 
 public class Query {
 
@@ -46,7 +45,7 @@ public class Query {
     }
 
     public int handleInsert (
-        final QueryPanelContentProvider queryPanelContentProvider,
+        final QueryPanelContentProvider_Properties queryPanelContentProvider,
         final String[] defaults) {
 
         ParametersDialog dialog = new ParametersDialog (queryPanelContentProvider, this, defaults);
