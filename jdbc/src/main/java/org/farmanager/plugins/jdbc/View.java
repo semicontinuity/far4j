@@ -1,10 +1,13 @@
 package org.farmanager.plugins.jdbc;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +37,14 @@ public class View {
         this.panelModes = panelModes();
 
         loadDriver();
+    }
+
+    private static void printPadded(final int i, final String string, final FileWriter fileWriter,
+            Properties properties1) throws IOException {
+        fileWriter.write(string);
+        for (int c = 0; c < columnWidth(properties1, i) - string.length(); c++) {
+            fileWriter.write(' ');
+        }
     }
 
 
@@ -246,4 +257,38 @@ public class View {
         LOGGER.info("Defaults query executed");
         return panelItems[0].customColumns;
     }
+
+    void exportData(final FileWriter fileWriter,
+            QueryPanelContentProvider_Properties queryPanelContentProvider_properties)
+            throws IOException
+    {
+        for (PluginPanelItem pluginPanelItem : queryPanelContentProvider_properties.pluginPanelItems) {
+            final String[] strings = pluginPanelItem.customColumns;
+            for (int i = 0; i < strings.length; i++) {
+                String string = strings[i];
+                printPadded(i, string, fileWriter, getProperties());
+                fileWriter.write(' ');
+            }
+            fileWriter.write('\n');
+        }
+    }
+
+
+    String deleteQuery(int selectedItemId) {
+        return constructQuery("delete.query", new Object[]{selectedItemId});
+    }
+
+    String updateQuery() {
+        return properties.getProperty("update.query");
+    }
+
+
+    String insertQuery(String[] strings) {
+        return constructQuery("insert.query", strings);
+    }
+
+    String constructQuery(final String templateName, final Object[] params) {
+        return (new MessageFormat(properties.getProperty(templateName))).format(params);
+    }
+
 }

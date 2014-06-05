@@ -3,6 +3,7 @@ package org.farmanager.plugins.jdbc.queries;
 import org.farmanager.plugins.jdbc.ParametersDialog;
 import org.farmanager.plugins.jdbc.QueryPanelContentProvider_Properties;
 import org.apache.log4j.Logger;
+import org.farmanager.plugins.jdbc.View;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -44,9 +45,9 @@ public class Query {
             + "parameters=" + parameters + "]";
     }
 
-    public int handleInsert (
-        final QueryPanelContentProvider_Properties queryPanelContentProvider,
-        final String[] defaults) {
+    public int handleInsert(
+            final QueryPanelContentProvider_Properties queryPanelContentProvider,
+            final String[] defaults, View currentView) {
 
         ParametersDialog dialog = new ParametersDialog (queryPanelContentProvider, this, defaults);
         if (!dialog.activate ())
@@ -59,7 +60,7 @@ public class Query {
             String query = constructQuery (prefix + ".query", dialog.getParams (null));
             executeUpdate(query);
 */
-            queryPanelContentProvider.executeUpdate(construct(dialog));
+            queryPanelContentProvider.executeUpdate(construct(dialog), currentView);
             return 1;
         }
     }

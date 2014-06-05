@@ -9,7 +9,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -165,8 +164,8 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
                 strings[i] = strings[i].trim();
             }
 
-            String query = constructQuery ("insert.query", strings);
-            executeUpdate(query);
+            String query = currentView.insertQuery(strings);
+            executeUpdate(query, currentView);
 
             return 1;
         }
@@ -176,8 +175,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         }
     }
 
-    private static String readStringFromFile (File file) throws IOException
-    {
+    private static String readStringFromFile (File file) throws IOException {
         final FileReader fileReader = new FileReader (file);
         final StringBuilder stringBuilder = new StringBuilder ();
         char[] buffer = new char[2048];
@@ -217,7 +215,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     private int handleExport() {
         try {
             FileWriter fileWriter = new FileWriter(outputFile());
-            exportData(fileWriter);
+            currentView.exportData(fileWriter, this);
             exportInfo(fileWriter);
             fileWriter.close();
             return 0;
@@ -241,29 +239,8 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         }
     }
 
-    private void exportData(final FileWriter fileWriter)
-            throws IOException
-    {
-        for (PluginPanelItem pluginPanelItem : pluginPanelItems) {
-            final String[] strings = pluginPanelItem.customColumns;
-            for (int i = 0; i < strings.length; i++) {
-                String string = strings[i];
-                printPadded(i, string, fileWriter);
-                fileWriter.write(' ');
-            }
-            fileWriter.write('\n');
-        }
-    }
-
     private File outputFile() {
         return new File(plugin.getHome(), currentView.getTitle() + ".txt");
-    }
-
-    private void printPadded(final int i, final String string, final FileWriter fileWriter) throws IOException {
-        fileWriter.write(string);
-        for (int c = 0; c < View.columnWidth(properties, i) - string.length(); c++) {
-            fileWriter.write(' ');
-        }
     }
 
 
@@ -275,8 +252,8 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
                 final int currentItem = AbstractPlugin.getCurrentItem();
                 int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
                 LOGGER.info("Going to delete column with id " + selectedItemId);
-                String query = constructQuery("delete.query", new Object[]{selectedItemId});
-                executeUpdate(query);
+                String query = currentView.deleteQuery(selectedItemId);
+                executeUpdate(query, currentView);
             }
             return 1;
         }
@@ -284,7 +261,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
 
     private int handleUpdate() {
         LOGGER.debug("Update!");
-        if (properties.getProperty("update.query") == null) {
+        if (currentView.updateQuery() == null) {
             return 0;
         }
         final int currentItem = AbstractPlugin.getCurrentItem();
@@ -297,8 +274,8 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             LOGGER.debug("Update dialog dismissed");
             return 1;
         } else {
-            String query = constructQuery("update.query", dialog.getParams(selectedItemId));
-            executeUpdate(query);
+            String query = currentView.constructQuery("update.query", dialog.getParams(selectedItemId));
+            executeUpdate(query, currentView);
             return 1;
         }
     }
@@ -319,7 +296,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
 //            return handleInsert(
 //                "favorite.query." + dialog.selectedItem());
             final Query query = queries.get(dialog.selectedItem());
-            return query.handleInsert(this, defaults);
+            return query.handleInsert(this, defaults, currentView);
         }
     }
 
@@ -332,8 +309,8 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         if (!dialog.activate()) {
             return 1;
         } else {
-            final String query = constructQuery("insert.query", dialog.getParams(null));
-            executeUpdate(query);
+            final String query = currentView.constructQuery("insert.query", dialog.getParams(null));
+            executeUpdate(query, currentView);
             return 1;
         }
     }
@@ -359,19 +336,10 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     }
 
 
-
-    private String constructQuery(
-            final String templateName, final Object[] params)
-    {
-        return (new MessageFormat(properties.getProperty(templateName))).format(
-                params);
-    }
-
-
-    public void executeUpdate(final String query) {
+    public void executeUpdate(final String query, View currentView1) {
         LOGGER.info("Executing query " + query);
         try {
-            final Connection conn = DriverManager.getConnection(url);
+            final Connection conn = DriverManager.getConnection(currentView1.getUrl());
             final Statement stmt = conn.createStatement();
             stmt.executeUpdate(query);
             stmt.close();
