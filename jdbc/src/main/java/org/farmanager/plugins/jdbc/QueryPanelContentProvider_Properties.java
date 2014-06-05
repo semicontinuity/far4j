@@ -487,7 +487,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     }
 
     private String childKey() {
-        final int index = View.keyColumn(properties);
+        final int index = currentView.keyColumn();
         if (index == -1) {
             final int currentItem = AbstractPlugin.getCurrentItem();
             return pluginPanelItems[currentItem - 1].cFileName;

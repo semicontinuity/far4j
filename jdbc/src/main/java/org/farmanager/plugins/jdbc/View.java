@@ -36,6 +36,92 @@ public class View {
         loadDriver();
     }
 
+
+    PluginPanelItem[] executeQuery(final String query, final Map<Integer, String[]> result,
+            final int columnCount)
+    {
+        result.clear();
+        final int hScreen = AbstractPlugin.saveScreen();
+//        AbstractPlugin.message (
+//                0, null, new String[] {"Please wait","Executing query", query}, 0);
+        try {
+            Connection conn = DriverManager.getConnection(getUrl());
+            LOGGER.debug("Connection to " + getUrl() + " established");
+            Statement stmt = conn.createStatement();
+            LOGGER.debug("Executing query " + query);
+            LOGGER.debug("Column count: " + columnCount);
+            ResultSet rs = stmt.executeQuery(query);
+
+            final ArrayList<PluginPanelItem> items = new ArrayList<>();
+            while (rs.next()) {
+                final PluginPanelItem pluginPanelItem = new PluginPanelItem();
+                // First column is ID
+                final int id = rs.getInt(1);
+                // keep id in crc32.
+                // we use Far presentation model to data model, which is ugly
+                pluginPanelItem.crc32 = id;
+                pluginPanelItem.dwFileAttributes = isNavigatable()
+                        ? PluginPanelItem.FILE_ATTRIBUTE_DIRECTORY
+                        : PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
+                pluginPanelItem.customColumns = new String[columnCount];
+                for (int i = 0; i < columnCount; i++) {
+                    String value = String.valueOf(rs.getObject(i + 2));
+                    pluginPanelItem.customColumns[i] = presentation(i, value,
+                            getProperties());
+                }
+
+                final int namecolumn = nameColumn(getProperties());
+                if (namecolumn == -1) {
+                    pluginPanelItem.cFileName = QueryPanelContentProvider_Properties.zeropadded(id); // TODO
+                } else {
+                    pluginPanelItem.cFileName = pluginPanelItem.customColumns[namecolumn];
+                }
+                //LOGGER.info("Set name: " + pluginPanelItem.cFileName);
+
+                items.add(pluginPanelItem);
+                result.put(id, pluginPanelItem.customColumns);
+            }
+
+            final PluginPanelItem[] pluginPanelItems = new PluginPanelItem[items.size()];
+            items.toArray(pluginPanelItems);
+            return pluginPanelItems;
+        } catch (Exception e) {
+            LOGGER.error(e, e);
+            return null;    // TODO
+        } finally {
+            AbstractPlugin.restoreScreen(hScreen);
+        }
+    }
+
+
+    // new?
+    private List<String[]> executeQuery(final String query, final int columnCount,
+            QueryPanelContentProvider_Properties queryPanelContentProvider_properties) throws SQLException
+    {
+        final Connection conn = DriverManager.getConnection(queryPanelContentProvider_properties.url);
+        LOGGER.debug("Connection to " + queryPanelContentProvider_properties.url + " established");
+        final Statement stmt = conn.createStatement();
+        LOGGER.debug("Executing query " + '"' + query + '"');
+        LOGGER.debug("Column count: " + columnCount);
+        final ResultSet rs = stmt.executeQuery(query);
+
+        final ArrayList<String[]> items = new ArrayList<>();
+        while (rs.next()) {
+            final String[] pluginPanelItem = new String[columnCount];
+            for (int i = 0; i < columnCount; i++) {
+                final String value = String.valueOf(rs.getObject(i + 1));
+                pluginPanelItem[i] = presentation(i, value, getProperties());
+            }
+            items.add(pluginPanelItem);
+        }
+        return items;
+    }
+
+
+    int keyColumn() {
+        return intPropertySafe(getProperties(), "key-column");
+    }
+
     public PanelMode[] getPanelModes() {
         return panelModes;
     }
@@ -87,65 +173,7 @@ public class View {
         }
     }
 
-    static int keyColumn(final Properties properties) {
-        return intPropertySafe(properties, "key-column");
-    }
 
-    PluginPanelItem[] executeQuery(final String query, final Map<Integer, String[]> result,
-            final int columnCount)
-    {
-        result.clear();
-        final int hScreen = AbstractPlugin.saveScreen();
-//        AbstractPlugin.message (
-//                0, null, new String[] {"Please wait","Executing query", query}, 0);
-        try {
-            Connection conn = DriverManager.getConnection(getUrl());
-            LOGGER.debug("Connection to " + getUrl() + " established");
-            Statement stmt = conn.createStatement();
-            LOGGER.debug("Executing query " + query);
-            LOGGER.debug("Column count: " + columnCount);
-            ResultSet rs = stmt.executeQuery(query);
-
-            final ArrayList<PluginPanelItem> items = new ArrayList<>();
-            while (rs.next()) {
-                final PluginPanelItem pluginPanelItem = new PluginPanelItem();
-                // First column is ID
-                final int id = rs.getInt(1);
-                // keep id in crc32.
-                // we use Far presentation model to data model, which is ugly
-                pluginPanelItem.crc32 = id;
-                pluginPanelItem.dwFileAttributes = isNavigatable()
-                        ? PluginPanelItem.FILE_ATTRIBUTE_DIRECTORY
-                        : PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
-                pluginPanelItem.customColumns = new String[columnCount];
-                for (int i = 0; i < columnCount; i++) {
-                    String value = String.valueOf(rs.getObject(i + 2));
-                    pluginPanelItem.customColumns[i] = presentation(i, value,
-                                    getProperties());
-                }
-
-                final int namecolumn = nameColumn(getProperties());
-                if (namecolumn == -1) {
-                    pluginPanelItem.cFileName = QueryPanelContentProvider_Properties.zeropadded(id); // TODO
-                } else {
-                    pluginPanelItem.cFileName = pluginPanelItem.customColumns[namecolumn];
-                }
-                //LOGGER.info("Set name: " + pluginPanelItem.cFileName);
-
-                items.add(pluginPanelItem);
-                result.put(id, pluginPanelItem.customColumns);
-            }
-
-            final PluginPanelItem[] pluginPanelItems = new PluginPanelItem[items.size()];
-            items.toArray(pluginPanelItems);
-            return pluginPanelItems;
-        } catch (Exception e) {
-            LOGGER.error(e, e);
-            return null;    // TODO
-        } finally {
-            AbstractPlugin.restoreScreen(hScreen);
-        }
-    }
 
     public Properties getProperties() {
         return properties;
@@ -204,29 +232,6 @@ public class View {
             panelModes[i] = new PanelMode(columns, i == PanelModeId.WIDE, null);
         }
         return panelModes;
-    }
-
-    // new?
-    private List<String[]> executeQuery(final String query, final int columnCount,
-            QueryPanelContentProvider_Properties queryPanelContentProvider_properties) throws SQLException
-    {
-        final Connection conn = DriverManager.getConnection(queryPanelContentProvider_properties.url);
-        LOGGER.debug("Connection to " + queryPanelContentProvider_properties.url + " established");
-        final Statement stmt = conn.createStatement();
-        LOGGER.debug("Executing query " + '"' + query + '"');
-        LOGGER.debug("Column count: " + columnCount);
-        final ResultSet rs = stmt.executeQuery(query);
-
-        final ArrayList<String[]> items = new ArrayList<>();
-        while (rs.next()) {
-            final String[] pluginPanelItem = new String[columnCount];
-            for (int i = 0; i < columnCount; i++) {
-                final String value = String.valueOf(rs.getObject(i + 1));
-                pluginPanelItem[i] = presentation(i, value, getProperties());
-            }
-            items.add(pluginPanelItem);
-        }
-        return items;
     }
 
     String[] initDefaults() {
