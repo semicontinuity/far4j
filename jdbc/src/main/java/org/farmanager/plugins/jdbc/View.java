@@ -6,12 +6,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
+import org.farmanager.api.AbstractPlugin;
 import org.farmanager.api.PanelMode;
 import org.farmanager.api.PanelModeId;
+import org.farmanager.api.PluginPanelItem;
 import org.farmanager.api.jni.PanelColumnType;
 import org.farmanager.api.panels.NamedColumnDescriptor;
 
@@ -20,13 +24,20 @@ public class View {
 
     private Properties properties;
     private View parent;
+    protected PanelMode[] panelModes;
 
     public View(final Properties properties, final View parent) {
         this.properties = new Properties();
         this.properties.putAll(properties);
         this.parent = parent;
 
+        this.panelModes = panelModes();
+
         loadDriver();
+    }
+
+    public PanelMode[] getPanelModes() {
+        return panelModes;
     }
 
     private static PanelColumnType columnType(final Properties properties, final int i) {
@@ -61,6 +72,79 @@ public class View {
 
     private static boolean columnHasPadding(final Properties properties, final int i) {
         return properties.getProperty("column." + i + ".padding") != null;
+    }
+
+    private static int nameColumn (Properties properties) {
+        return intPropertySafe(properties, "namecolumn");
+    }
+
+    static int intPropertySafe(final Properties properties, final String key) {
+        try {
+            return Integer.parseInt(properties.getProperty(key));
+        }
+        catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    static int keyColumn(final Properties properties) {
+        return intPropertySafe(properties, "key-column");
+    }
+
+    PluginPanelItem[] executeQuery(final String query, final Map<Integer, String[]> result,
+            final int columnCount)
+    {
+        result.clear();
+        final int hScreen = AbstractPlugin.saveScreen();
+//        AbstractPlugin.message (
+//                0, null, new String[] {"Please wait","Executing query", query}, 0);
+        try {
+            Connection conn = DriverManager.getConnection(getUrl());
+            LOGGER.debug("Connection to " + getUrl() + " established");
+            Statement stmt = conn.createStatement();
+            LOGGER.debug("Executing query " + query);
+            LOGGER.debug("Column count: " + columnCount);
+            ResultSet rs = stmt.executeQuery(query);
+
+            final ArrayList<PluginPanelItem> items = new ArrayList<>();
+            while (rs.next()) {
+                final PluginPanelItem pluginPanelItem = new PluginPanelItem();
+                // First column is ID
+                final int id = rs.getInt(1);
+                // keep id in crc32.
+                // we use Far presentation model to data model, which is ugly
+                pluginPanelItem.crc32 = id;
+                pluginPanelItem.dwFileAttributes = isNavigatable()
+                        ? PluginPanelItem.FILE_ATTRIBUTE_DIRECTORY
+                        : PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
+                pluginPanelItem.customColumns = new String[columnCount];
+                for (int i = 0; i < columnCount; i++) {
+                    String value = String.valueOf(rs.getObject(i + 2));
+                    pluginPanelItem.customColumns[i] = presentation(i, value,
+                                    getProperties());
+                }
+
+                final int namecolumn = nameColumn(getProperties());
+                if (namecolumn == -1) {
+                    pluginPanelItem.cFileName = QueryPanelContentProvider_Properties.zeropadded(id); // TODO
+                } else {
+                    pluginPanelItem.cFileName = pluginPanelItem.customColumns[namecolumn];
+                }
+                //LOGGER.info("Set name: " + pluginPanelItem.cFileName);
+
+                items.add(pluginPanelItem);
+                result.put(id, pluginPanelItem.customColumns);
+            }
+
+            final PluginPanelItem[] pluginPanelItems = new PluginPanelItem[items.size()];
+            items.toArray(pluginPanelItems);
+            return pluginPanelItems;
+        } catch (Exception e) {
+            LOGGER.error(e, e);
+            return null;    // TODO
+        } finally {
+            AbstractPlugin.restoreScreen(hScreen);
+        }
     }
 
     public Properties getProperties() {
@@ -143,5 +227,18 @@ public class View {
             items.add(pluginPanelItem);
         }
         return items;
+    }
+
+    String[] initDefaults() {
+        final String query = properties.getProperty("defaults.query");
+        LOGGER.info("Defaults query=" + query);
+        if (query == null) return null;
+
+        int columnCount = Integer.parseInt(getProperties().getProperty("insert.query.param.count", "0"));
+        // TODO: dummy parameter
+        final PluginPanelItem[] panelItems = executeQuery(query, new HashMap<Integer, String[]>(),
+                columnCount);
+        LOGGER.info("Defaults query executed");
+        return panelItems[0].customColumns;
     }
 }

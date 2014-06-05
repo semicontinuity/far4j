@@ -11,9 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -53,37 +51,21 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
 
         query = view.getQuery();
         url = view.getUrl();
-        panelTitle = view.getTitle();
         columnCount = view.getColumnCount();
-        panelModes = view.panelModes();
-        defaults = initDefaults(view);
+        defaults = view.initDefaults();
         navigatable = view.isNavigatable();
         childTemplate = view.getChildTemplate();
     }
 
 
-    private String[] initDefaults(final View properties) {
-        final String query = properties.getProperties().getProperty("defaults.query");
-        LOGGER.info("Defaults query=" + query);
-        if (query == null) return null;
-
-        int columnCount = Integer.parseInt(properties.getProperties().getProperty("insert.query.param.count", "0"));
-        // TODO: dummy parameter
-        final PluginPanelItem[] panelItems = executeQuery(properties, this, query, new HashMap<Integer, String[]>(),
-                columnCount);
-        LOGGER.info("Defaults query executed");
-        return panelItems[0].customColumns;
-    }
-
-
     @Override
     public PanelMode[] getPanelModes() {
-        return panelModes;
+        return currentView.getPanelModes();
     }
 
     @Override
     public String getPanelTitle() {
-        return panelTitle;
+        return currentView.getTitle();
     }
 
     @Override
@@ -91,85 +73,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         LOGGER.info("getFindData " + opMode);
         // TODO: smarter: cache!
         fillInfoPanelLines();
-        return pluginPanelItems = executeQuery(currentView, this, query, data, columnCount);
-    }
-
-
-    private static PluginPanelItem[] executeQuery(View view,
-            QueryPanelContentProvider_Properties queryPanelContentProvider_properties,
-            final String query, final Map<Integer, String[]> result, final int columnCount)
-    {
-        result.clear();
-        final int hScreen = AbstractPlugin.saveScreen();
-//        AbstractPlugin.message (
-//                0, null, new String[] {"Please wait","Executing query", query}, 0);
-        try {
-            Connection conn = DriverManager.getConnection(view.getUrl());
-            LOGGER.debug("Connection to " + view.getUrl() + " established");
-            Statement stmt = conn.createStatement();
-            LOGGER.debug("Executing query " + query);
-            LOGGER.debug("Column count: " + columnCount);
-            ResultSet rs = stmt.executeQuery(query);
-
-            final ArrayList<PluginPanelItem> items = new ArrayList<>();
-            while (rs.next()) {
-                final PluginPanelItem pluginPanelItem = new PluginPanelItem();
-                // First column is ID
-                final int id = rs.getInt(1);
-                // keep id in crc32.
-                // we use Far presentation model to data model, which is ugly
-                pluginPanelItem.crc32 = id;
-                pluginPanelItem.dwFileAttributes = view.isNavigatable()
-                        ? PluginPanelItem.FILE_ATTRIBUTE_DIRECTORY
-                        : PluginPanelItem.FILE_ATTRIBUTE_NORMAL;
-                pluginPanelItem.customColumns = new String[columnCount];
-                for (int i = 0; i < columnCount; i++) {
-                    String value = String.valueOf(rs.getObject(i + 2));
-                    pluginPanelItem.customColumns[i] = View
-                            .presentation(i, value,
-                                    view.getProperties());
-                }
-
-                final int namecolumn = nameColumn(queryPanelContentProvider_properties.properties);
-                if (namecolumn == -1) {
-                    pluginPanelItem.cFileName = zeropadded(id); // TODO
-                } else {
-                    pluginPanelItem.cFileName = pluginPanelItem.customColumns[namecolumn];
-                }
-                //LOGGER.info("Set name: " + pluginPanelItem.cFileName);
-
-                items.add(pluginPanelItem);
-                result.put(id, pluginPanelItem.customColumns);
-            }
-
-            final PluginPanelItem[] pluginPanelItems = new PluginPanelItem[items.size()];
-            items.toArray(pluginPanelItems);
-            return pluginPanelItems;
-        } catch (Exception e) {
-            LOGGER.error(e, e);
-            return null;    // TODO
-        } finally {
-            AbstractPlugin.restoreScreen(hScreen);
-        }
-    }
-
-
-    private static int nameColumn (Properties properties)
-    {
-        return intPropertySafe(properties, "namecolumn");
-    }
-
-    private static int keyColumn(final Properties properties) {
-        return intPropertySafe(properties, "key-column");
-    }
-
-    private static int intPropertySafe (final Properties properties, final String key) {
-        try {
-            return Integer.parseInt(properties.getProperty(key));
-        }
-        catch (NumberFormatException e) {
-            return -1;
-        }
+        return pluginPanelItems = currentView.executeQuery(query, data, columnCount);
     }
 
 
@@ -352,7 +256,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     }
 
     private File outputFile() {
-        return new File(plugin.getHome(), panelTitle + ".txt");
+        return new File(plugin.getHome(), currentView.getTitle() + ".txt");
     }
 
     private void printPadded(final int i, final String string, final FileWriter fileWriter) throws IOException {
@@ -583,7 +487,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     }
 
     private String childKey() {
-        final int index = keyColumn(properties);
+        final int index = View.keyColumn(properties);
         if (index == -1) {
             final int currentItem = AbstractPlugin.getCurrentItem();
             return pluginPanelItems[currentItem - 1].cFileName;
@@ -596,7 +500,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
 
 
     public String getCurrentDirectory() {
-        return panelTitle;
+        return currentView.getTitle();
     }
 
 

@@ -27,7 +27,6 @@ public class QueryPanelContentProvider extends AbstractPanelContentProvider {
     protected String query;
     protected String url;
     protected int columnCount;
-    protected PanelMode[] panelModes;
     protected String panelTitle;
     protected Properties properties;
     protected FarInfoPanelLine[] infoPanelLines;
