@@ -60,7 +60,7 @@ public class Query {
             String query = constructQuery (prefix + ".query", dialog.getParams (null));
             executeUpdate(query);
 */
-            queryPanelContentProvider.executeUpdate(construct(dialog), currentView);
+            currentView.executeUpdate(construct(dialog));
             return 1;
         }
     }

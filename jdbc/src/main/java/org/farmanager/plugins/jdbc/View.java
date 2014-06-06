@@ -19,7 +19,9 @@ import org.farmanager.api.AbstractPlugin;
 import org.farmanager.api.PanelMode;
 import org.farmanager.api.PanelModeId;
 import org.farmanager.api.PluginPanelItem;
+import org.farmanager.api.jni.FarInfoPanelLine;
 import org.farmanager.api.jni.PanelColumnType;
+import org.farmanager.api.messages.Messages;
 import org.farmanager.api.panels.NamedColumnDescriptor;
 
 public class View {
@@ -39,10 +41,9 @@ public class View {
         loadDriver();
     }
 
-    private static void printPadded(final int i, final String string, final FileWriter fileWriter,
-            Properties properties1) throws IOException {
+    private void printPadded(final int i, final String string, final FileWriter fileWriter) throws IOException {
         fileWriter.write(string);
-        for (int c = 0; c < columnWidth(properties1, i) - string.length(); c++) {
+        for (int c = 0; c < columnWidth(i) - string.length(); c++) {
             fileWriter.write(' ');
         }
     }
@@ -77,8 +78,7 @@ public class View {
                 pluginPanelItem.customColumns = new String[columnCount];
                 for (int i = 0; i < columnCount; i++) {
                     String value = String.valueOf(rs.getObject(i + 2));
-                    pluginPanelItem.customColumns[i] = presentation(i, value,
-                            getProperties());
+                    pluginPanelItem.customColumns[i] = presentation(i, value);
                 }
 
                 final int namecolumn = nameColumn(getProperties());
@@ -121,7 +121,7 @@ public class View {
             final String[] pluginPanelItem = new String[columnCount];
             for (int i = 0; i < columnCount; i++) {
                 final String value = String.valueOf(rs.getObject(i + 1));
-                pluginPanelItem[i] = presentation(i, value, getProperties());
+                pluginPanelItem[i] = presentation(i, value);
             }
             items.add(pluginPanelItem);
         }
@@ -137,22 +137,10 @@ public class View {
         return panelModes;
     }
 
-    private static PanelColumnType columnType(final Properties properties, final int i) {
-        return Enum.valueOf(PanelColumnType.class, properties.getProperty("column." + i + ".type", "CUSTOM" + i));
-    }
 
-    static Integer columnWidth(Properties properties, int i) {
-        return Integer.valueOf(properties.getProperty("column." + i + ".width"));
-    }
-
-    private static String columnTitle(Properties properties, int i) {
-        return properties.getProperty("column." + i + ".title");
-    }
-
-    static String presentation(final int i,
-            final String s, Properties properties1) {
-        if (columnHasPadding(properties1, i)) {
-            return pad(s, columnWidth(properties1, i));
+    String presentation(final int i, final String s) {
+        if (columnHasPadding(i)) {
+            return pad(s, columnWidth(i));
         } else {
             return s;
         }
@@ -167,7 +155,7 @@ public class View {
         return builder.toString();
     }
 
-    private static boolean columnHasPadding(final Properties properties, final int i) {
+    private boolean columnHasPadding(final int i) {
         return properties.getProperty("column." + i + ".padding") != null;
     }
 
@@ -228,15 +216,13 @@ public class View {
     }
 
     PanelMode[] panelModes() {
-
-        final Properties properties1 = getProperties();
         final NamedColumnDescriptor[] columns =
                 new NamedColumnDescriptor[getColumnCount()];
         for (int i = 0; i < getColumnCount(); i++) {
             columns[i] = new NamedColumnDescriptor(
-                    columnTitle(properties1, i),
-                    columnType(properties1, i),
-                    columnWidth(properties1, i));
+                    columnTitle(i),
+                    columnType(i),
+                    columnWidth(i));
         }
         final PanelMode[] panelModes = new PanelMode[10];
         for (int i = 0; i < panelModes.length; i++) {
@@ -244,6 +230,19 @@ public class View {
         }
         return panelModes;
     }
+
+    private PanelColumnType columnType(final int i) {
+        return Enum.valueOf(PanelColumnType.class, properties.getProperty("column." + i + ".type", "CUSTOM" + i));
+    }
+
+    private Integer columnWidth(int i) {
+        return Integer.valueOf(properties.getProperty("column." + i + ".width"));
+    }
+
+    private String columnTitle(int i) {
+        return properties.getProperty("column." + i + ".title");
+    }
+
 
     String[] initDefaults() {
         final String query = properties.getProperty("defaults.query");
@@ -266,7 +265,7 @@ public class View {
             final String[] strings = pluginPanelItem.customColumns;
             for (int i = 0; i < strings.length; i++) {
                 String string = strings[i];
-                printPadded(i, string, fileWriter, getProperties());
+                printPadded(i, string, fileWriter);
                 fileWriter.write(' ');
             }
             fileWriter.write('\n');
@@ -291,4 +290,75 @@ public class View {
         return (new MessageFormat(properties.getProperty(templateName))).format(params);
     }
 
+    /**
+     * Every info panel line contains result of certain query
+     *  @param i index of info panel line
+     *
+     */
+    FarInfoPanelLine fillInfoPanelLine(final int i) {
+        try {
+            Connection conn = DriverManager.getConnection(getUrl());
+            Statement stmt = conn.createStatement();
+            ResultSet resultSet = stmt.executeQuery(
+                    getProperties().getProperty(
+                            (new StringBuilder()).append("info.line.")
+                                    .append(i)
+                                    .append(".query").toString()
+                    )
+            );
+            resultSet.next();
+            Object object = resultSet.getObject(1);
+            LOGGER.info("Info line: " + object);
+            stmt.close();
+            conn.close();
+            return new FarInfoPanelLine(
+                    getProperties().getProperty(String.format("info.line.%d.text", i)),
+                    String.valueOf(object),
+                    false
+            );
+        } catch (SQLException e) {
+            Messages.longOperation(e.toString());
+            LOGGER.error(e, e);
+            return null;
+        }
+    }
+
+    FarInfoPanelLine[] fillInfoPanelLines() {
+        Properties properties = getProperties();
+        String property;
+        property = properties.getProperty("info.line.count");
+        if (property == null) {
+            return new FarInfoPanelLine[0];
+        }
+        try {
+            int count = Integer.parseInt(property);
+            if (count < 1) {
+                throw new IllegalArgumentException("info.line.count should be > 0");
+            }
+            final FarInfoPanelLine[] infoPanelLines = new FarInfoPanelLine[count];
+            for (int i = 0; i < count; i++) {
+                infoPanelLines[i] = fillInfoPanelLine(i);
+            }
+            return infoPanelLines;
+        } catch (Exception e) {
+            LOGGER.warn(e.getMessage());
+            return null;
+        }
+    }
+
+    public void executeUpdate(final String query) {
+        LOGGER.info("Executing query " + query);
+        try {
+            final Connection conn = DriverManager.getConnection(getUrl());
+            final Statement stmt = conn.createStatement();
+            stmt.executeUpdate(query);
+            stmt.close();
+            conn.close();
+        } catch (SQLException e) {
+            Messages.longOperation(e.toString());
+            LOGGER.error(e, e);
+        }
+        AbstractPlugin.updatePanel();
+        AbstractPlugin.redrawPanel();
+    }
 }

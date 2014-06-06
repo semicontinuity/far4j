@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,6 @@ import org.farmanager.api.PluginPanelItem;
 import org.farmanager.api.dialogs.YesNoDialog;
 import org.farmanager.api.jni.FarInfoPanelLine;
 import org.farmanager.api.jni.ProcessKeyFlags;
-import org.farmanager.api.messages.Messages;
 import org.farmanager.plugins.jdbc.queries.Query;
 
 import static org.farmanager.api.jni.KeyCodes.VK_F2;
@@ -52,7 +50,6 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         url = view.getUrl();
         columnCount = view.getColumnCount();
         defaults = view.initDefaults();
-        navigatable = view.isNavigatable();
         childTemplate = view.getChildTemplate();
     }
 
@@ -71,7 +68,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     public PluginPanelItem[] getFindData(final int opMode) {
         LOGGER.info("getFindData " + opMode);
         // TODO: smarter: cache!
-        fillInfoPanelLines();
+        infoPanelLines = currentView.fillInfoPanelLines();
         return pluginPanelItems = currentView.executeQuery(query, data, columnCount);
     }
 
@@ -165,7 +162,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             }
 
             String query = currentView.insertQuery(strings);
-            executeUpdate(query, currentView);
+            currentView.executeUpdate(query);
 
             return 1;
         }
@@ -253,7 +250,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
                 int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
                 LOGGER.info("Going to delete column with id " + selectedItemId);
                 String query = currentView.deleteQuery(selectedItemId);
-                executeUpdate(query, currentView);
+                currentView.executeUpdate(query);
             }
             return 1;
         }
@@ -275,7 +272,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             return 1;
         } else {
             String query = currentView.constructQuery("update.query", dialog.getParams(selectedItemId));
-            executeUpdate(query, currentView);
+            currentView.executeUpdate(query);
             return 1;
         }
     }
@@ -310,7 +307,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             return 1;
         } else {
             final String query = currentView.constructQuery("insert.query", dialog.getParams(null));
-            executeUpdate(query, currentView);
+            currentView.executeUpdate(query);
             return 1;
         }
     }
@@ -335,75 +332,6 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         return strings;
     }
 
-
-    public void executeUpdate(final String query, View currentView1) {
-        LOGGER.info("Executing query " + query);
-        try {
-            final Connection conn = DriverManager.getConnection(currentView1.getUrl());
-            final Statement stmt = conn.createStatement();
-            stmt.executeUpdate(query);
-            stmt.close();
-            conn.close();
-        } catch (SQLException e) {
-            Messages.longOperation(e.toString());
-            LOGGER.error(e, e);
-        }
-        AbstractPlugin.updatePanel();
-        AbstractPlugin.redrawPanel();
-    }
-
-
-    private void fillInfoPanelLines() {
-        infoPanelLines = null;
-        String property;
-        property = properties.getProperty("info.line.count");
-        if (property == null) {
-            return;
-        }
-        try {
-            int count = Integer.parseInt(property);
-            if (count < 1) {
-                throw new IllegalArgumentException("info.line.count should be > 0");
-            }
-            infoPanelLines = new FarInfoPanelLine[count];
-            for (int i = 0; i < count; i++) fillInfoPanelLine(i);
-
-        } catch (Exception e) {
-            LOGGER.warn(e.getMessage());
-        }
-    }
-
-    /**
-     * Every info panel line contains result of certain query
-     *
-     * @param i index of info panel line
-     */
-    private void fillInfoPanelLine(final int i) {
-        try {
-            Connection conn = DriverManager.getConnection(url);
-            Statement stmt = conn.createStatement();
-            ResultSet resultSet = stmt.executeQuery(
-                    properties.getProperty(
-                            (new StringBuilder()).append("info.line.")
-                                    .append(i)
-                                    .append(".query").toString()
-                    )
-            );
-            resultSet.next();
-            Object object = resultSet.getObject(1);
-            LOGGER.info("Info line: " + object);
-            stmt.close();
-            conn.close();
-            infoPanelLines[i] = new FarInfoPanelLine(
-                    properties.getProperty(String.format("info.line.%d.text", i)),
-                    String.valueOf(object),
-                    false
-            );
-        } catch (SQLException e) {
-            Messages.longOperation(e.toString());
-            LOGGER.error(e, e);
-        }
-    }
 
     @Override
     public FarInfoPanelLine[] getInfoPanelLines() {
