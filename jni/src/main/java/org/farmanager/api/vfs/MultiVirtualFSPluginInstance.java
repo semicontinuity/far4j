@@ -75,8 +75,8 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
     // GetFile
     // =========================================================================
     @Override
-    public int getFile(String fileName, String destPath, int move, int opmode) {
-        return panelContentProvider.getFile(fileName, destPath, move, opmode);
+    public int getFile(String destPath, String fileName, int move, int opmode) {
+        return panelContentProvider.getFile(destPath, fileName, move, opmode);
     }
 
 
@@ -84,8 +84,8 @@ public abstract class MultiVirtualFSPluginInstance extends AbstractPluginInstanc
     // PutFile
     // =========================================================================
     @Override
-    public int putFile (final String fileName, final int move, final int opmode) {
-        return panelContentProvider.putFile(fileName, move, opmode);
+    public int putFile(String srcPath, final String fileName, final int move, final int opmode) {
+        return panelContentProvider.putFile(srcPath, fileName, move, opmode);
     }
 
     // =========================================================================

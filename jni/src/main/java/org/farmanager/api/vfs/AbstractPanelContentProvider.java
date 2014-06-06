@@ -34,14 +34,14 @@ public abstract class AbstractPanelContentProvider implements PanelContentProvid
         return new PluginPanelItem[0];  // TODO: null?
     }
 
-    public int getFile(String fileName, String destPath, int move, int opmode) {
+    public int getFile(String destPath, String fileName, int move, int opmode) {
         // do nothing by default
         return 0;
     }
 
 
     @Override
-    public int putFile(String fileName, int move, int opmode) {
+    public int putFile(String srcPath, String fileName, int move, int opmode) {
         // do nothing by default
         return 0;
     }

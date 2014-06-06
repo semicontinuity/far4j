@@ -67,9 +67,13 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
 
 
     @Override
-    public int getFile(final String fileName, final String destPath, final int move, final int opmode) {
-        int selectedItemId = AbstractPlugin.getSelectedItemCrc32 ();
-        final File file = new File (destPath, String.valueOf(selectedItemId));
+    public int getFile(final String destPath, final String fileName, final int move,
+            final int opmode) {
+        LOGGER.debug("getFile " + destPath + ' ' + fileName);
+        final int currentItem = AbstractPlugin.getCurrentItem();
+        int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
+        LOGGER.debug("getFile: " + selectedItemId);
+        final File file = new File(destPath, String.valueOf(selectedItemId));
         try {
             final FileWriter writer = new FileWriter(file);
 
@@ -88,44 +92,14 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             return 1;
         }
 
+        LOGGER.debug("getFile returns 0");
         return 0;
     }
 
 
     @Override
-    public int putFile (final String fileName, final int move, final int opmode) {
-        final File file = new File (AbstractPlugin.getAnotherPanelDirectory (), fileName);
-        try {
-            final String s = readStringFromFile(file);
-            final String[] strings = s.split("\n");
-
-            for (int i = 0; i < strings.length; i++) {
-                strings[i] = strings[i].trim();
-            }
-
-            String query = currentView.insertQuery(strings);
-            currentView.executeUpdate(query);
-
-            return 1;
-        }
-        catch (IOException e) {
-            LOGGER.error(e,e);
-            return 0;
-        }
-    }
-
-    private static String readStringFromFile (File file) throws IOException {
-        final FileReader fileReader = new FileReader (file);
-        final StringBuilder stringBuilder = new StringBuilder ();
-        char[] buffer = new char[2048];
-        while (true)
-        {
-            final int read = fileReader.read (buffer);
-            if (read == -1) break;
-            stringBuilder.append (buffer, 0, read);
-        }
-        fileReader.close();
-        return stringBuilder.toString ();
+    public int putFile(String srcPath, final String fileName, final int move, final int opmode) {
+        return currentView.putFile(srcPath, fileName);
     }
 
 

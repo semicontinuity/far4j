@@ -182,8 +182,7 @@ public abstract class AbstractPluginInstance
      * of the proper plugin instance object for every file.
      */
     @UsedFromNativeCode
-    public int getFile (String fileName, String destPath, int move, int opmode)
-    {
+    public int getFile(String destPath, String fileName, int move, int opmode) {
         return 0;
     }
 
@@ -205,8 +204,7 @@ public abstract class AbstractPluginInstance
      *         If the function was interrupted by the user, it should return -1.
      */
     @UsedFromNativeCode
-    public int putFile (String fileName, int move, int opmode)
-    {
+    public int putFile(String srcPath, String fileName, int move, int opmode) {
         // fails by default
         return 0;
     }

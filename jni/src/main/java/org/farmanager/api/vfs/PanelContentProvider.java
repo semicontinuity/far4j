@@ -23,9 +23,9 @@ public interface PanelContentProvider {
      */
     PluginPanelItem[] getFindData (final int opMode);
 
-    int getFile (String fileName, String destPath, int move, int opmode);
+    int getFile(String destPath, String fileName, int move, int opmode);
 
-    int putFile(String fileName, int move, int opmode);
+    int putFile(String srcPath, String fileName, int move, int opmode);
 
     int processKey(int key, int controlState);
 

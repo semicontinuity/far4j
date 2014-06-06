@@ -1,5 +1,7 @@
 package org.farmanager.plugins.jdbc;
 
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
@@ -39,6 +41,20 @@ public class View {
         this.panelModes = panelModes();
 
         loadDriver();
+    }
+
+    private static String readStringFromFile (File file) throws IOException {
+        final FileReader fileReader = new FileReader (file);
+        final StringBuilder stringBuilder = new StringBuilder ();
+        char[] buffer = new char[2048];
+        while (true)
+        {
+            final int read = fileReader.read (buffer);
+            if (read == -1) break;
+            stringBuilder.append (buffer, 0, read);
+        }
+        fileReader.close();
+        return stringBuilder.toString ();
     }
 
     private void printPadded(final int i, final String string, final FileWriter fileWriter) throws IOException {
@@ -405,6 +421,28 @@ public class View {
         catch (Exception e) {
             LOGGER.error (e, e);
             return null;    // TODO
+        }
+    }
+
+    int putFile(String srcPath, String fileName) {
+        final File file = new File (srcPath, fileName);
+        LOGGER.debug("Put file " + file);
+        try {
+            final String s = readStringFromFile(file);
+            final String[] strings = s.split("\n");
+
+            for (int i = 0; i < strings.length; i++) {
+                strings[i] = strings[i].trim();
+            }
+
+            String query = insertQuery(strings);
+            executeUpdate(query);
+
+            return 1;
+        }
+        catch (IOException e) {
+            LOGGER.error(e,e);
+            return 0;
         }
     }
 }

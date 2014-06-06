@@ -878,6 +878,115 @@ intptr_t WINAPI DeleteFilesW(
 
 
 /**
+ * The GetFilesW function is called to get files from the file system emulated by the plugin.
+ *
+ * Return value
+ * If the function succeeds, the return value must be 1.
+ * If the function fails, 0 should be returned.
+ * If the function was interrupted by the user, it should return -1.
+ *
+ * Remarks
+ * If the operation is failed, but part of the files was successfully processed,
+ * the plugin can remove selection only from the processed files.
+ * To perform it, the plugin should clear the PPIF_SELECTED flag for processed items in the PluginPanelItem list
+ * passed to the function.
+ */
+intptr_t WINAPI GetFilesW(struct GetFilesInfo *Info) {
+    struct PluginPanelItem* items           = Info->PanelItem;
+    int                     itemsNumber     = Info->ItemsNumber;
+    int                     move            = Info->Move;
+    const wchar_t*          destPath        = Info->DestPath;
+    OPERATION_MODES         opMode          = Info->OpMode;
+
+    const PluginInstanceData* data = reinterpret_cast<PluginInstanceData*> (Info->hPanel);
+    const jobject jobj_PluginInstance = data->instance;
+
+    // we do not support some functionality yet:
+    // - changing DestPath
+    // - clearing PPIF_SELECTED flag
+//    log ("> GetFiles");
+//    log ("> ItemsNumber:", itemsNumber);
+
+    // assume that itemsNumber>0, items!=NULL
+    const jmethodID jmid_AbstractPluginInstance_getFile = env->GetMethodID (
+        jcls_AbstractPluginInstance, "getFile", "(Ljava/lang/String;Ljava/lang/String;II)I");
+//    log ("| jjmid_AbstractPluginInstance_getFile=", (int)jmid_AbstractPluginInstance_getFile);
+    if (jmid_AbstractPluginInstance_getFile == NULL) return 0; // TODO panic better
+
+    const jstring jstr_destPath  = env->NewString((const jchar*)Info->DestPath, _tcslen(Info->DestPath)); // TODO: think of GC, etc...
+    jint jint_move = move;
+    jint jint_opMode = opMode;
+
+//    jobjectArray joar_panelItems = env->NewObjectArray (itemsNumber, jcls_PluginPanelItem, 0);
+    for (int i = 0; i < itemsNumber; i++) {
+        const jstring jstr_cFileName = env->NewString ((const jchar*)Info->PanelItem[i].FileName, _tcslen(Info->PanelItem[i].FileName)); // TODO: think of GC, etc...
+        const jint result = env->CallIntMethod(jobj_PluginInstance, jmid_AbstractPluginInstance_getFile, jstr_destPath, jstr_cFileName, jint_move, jint_opMode);
+        if (result != 1) return result;
+
+        //log (items[i].FindData.cFileName);
+        //strcpy (fileName + pathLength + 1, items[i].FindData.cFileName);
+        //FILE* f = fopen (fileName, "wt");
+        //fprintf (f, "content");
+        //fclose (f);
+//        jobject jobj_item = env->AllocObject (jcls_PluginPanelItem);
+//        jfieldID jfid_cFileName              = env->GetFieldID (jcls_PluginPanelItem,  "cFileName", "Ljava/lang/String;");
+//        env->SetObjectField (jobj_item, jfid_cFileName, env->NewStringUTF (items[i].FindData.cFileName));
+
+//        env->SetObjectArrayElement (joar_panelItems, i, jobj_item);
+    }
+//    jint    jint_move     = move;
+//    jstring jstr_destPath = env->NewStringUTF (destPath);
+//    jint    jint_opMode   = opMode;
+
+
+
+//    log ("< GetFiles");
+    return 1;
+}
+
+
+/**
+ * The PutFilesW function is called to put files to the file system emulated by the plugin.
+ * (FAR to plugin: "those files are for you, you should place then on your panel").
+ * @return If the function succeeds, the return value must be 1 or 2.
+ *         If the return value is 1, FAR tries to position the cursor to the most recently created file on the active panel.
+ *         If the plugin returns 2, FAR does not perform any positioning operations.
+ *         If the function fails, 0 should be returned.
+ *         If the function was interrupted by the user, it should return -1.
+ *         If the operation has failed, but part of the files was successfully processed,
+ *         the plugin can remove selection only from the processed files.
+ *         To perform it, plugin should clear the PPIF_SELECTED flag for processed items
+ *         in the PluginPanelItem list passed to function.
+ */
+intptr_t WINAPI PutFilesW(const struct PutFilesInfo *Info) {
+    struct PluginPanelItem *items   = Info->PanelItem;
+    int ItemsNumber                 = Info->ItemsNumber;
+    int Move                        = Info->Move;
+    OPERATION_MODES OpMode          = Info->OpMode;
+
+
+    // assume that itemsNumber>0, items!=NULL
+    jmethodID jmid_AbstractPluginInstance_putFile = env->GetMethodID (
+        jcls_AbstractPluginInstance, "putFile", "(Ljava/lang/String;Ljava/lang/String;II)I");
+//    log ("| jjmid_AbstractPluginInstance_putFile=", (int)jmid_AbstractPluginInstance_putFile);
+    if (jmid_AbstractPluginInstance_putFile == NULL) return 0; // TODO panic better
+    const jstring jstr_srcPath  = env->NewString((const jchar*)Info->SrcPath, _tcslen(Info->SrcPath)); // TODO: think of GC, etc...
+
+    const jint jint_move = Move;
+    const jint jint_opMode = OpMode;
+    jint result = 0;
+    for (int i = 0; i < ItemsNumber; i++) {
+        const jstring jstr_cFileName = env->NewString ((const jchar*)Info->PanelItem[i].FileName, _tcslen(Info->PanelItem[i].FileName)); // TODO: think of GC, etc...
+        result = env->CallIntMethod (jobj_PluginInstance, jmid_AbstractPluginInstance_putFile, jstr_srcPath, jstr_cFileName, jint_move, jint_opMode);
+        if (result != 1) return result; // TODO
+    }
+
+    return result;
+}
+
+
+
+/**
  * ProcessPanelInputW
  */
 intptr_t WINAPI ProcessPanelInputW(

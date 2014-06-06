@@ -217,7 +217,7 @@ public class NodeContentProvider extends AbstractPanelContentProvider
      *         If the function fails, 0 should be returned.
      *         If the function was interrupted by the user, it should return -1.
      */
-    public int putFile (String fileName, int move, int opmode)
+    public int putFile(String srcPath, String fileName, int move, int opmode)
     {
         if (node instanceof PutContentOperation)
         {
