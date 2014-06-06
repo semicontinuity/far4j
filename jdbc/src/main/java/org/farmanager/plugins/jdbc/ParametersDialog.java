@@ -138,10 +138,12 @@ public class ParametersDialog extends FarDialog {
             if ("scalar".equals(subQueryType)) {
                 final JDBCEditControl jdbcComboBox = new JDBCEditControl();
                 parameterDataControls[i] = jdbcComboBox;
-                parameterDataControls[i].data = String.valueOf(provider.executeScalarQuery(subQuery));
+                parameterDataControls[i].data = String.valueOf(provider.currentView.executeScalarQuery(subQuery
+                ));
             }
             else {
-                final JDBCComboBox jdbcComboBox = new JDBCComboBox(provider.executeIdValueQuery(subQuery));
+                final JDBCComboBox jdbcComboBox = new JDBCComboBox(provider.currentView.executeIdValueQuery(subQuery
+                ));
                 jdbcComboBox.initialValue = selectedLineValues == null ? "" : selectedLineValues[i];
                 parameterDataControls[i] = jdbcComboBox;
                 parameterDataControls[i].data =
@@ -201,7 +203,8 @@ public class ParametersDialog extends FarDialog {
             }
 
             if (subQuery != null) {
-                final JDBCComboBox jdbcComboBox = new JDBCComboBox(provider.executeIdValueQuery(subQuery));
+                final JDBCComboBox jdbcComboBox = new JDBCComboBox(provider.currentView.executeIdValueQuery(subQuery
+                ));
                 jdbcComboBox.initialValue = selectedLineValues == null ? "" : selectedLineValues[i];
                 parameterDataControls[i] = jdbcComboBox;
             } else {

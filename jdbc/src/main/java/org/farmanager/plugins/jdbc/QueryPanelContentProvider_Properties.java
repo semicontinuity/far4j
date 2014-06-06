@@ -4,11 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -46,8 +41,6 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         this.currentView = view;
         this.properties = view.getProperties();
 
-        query = view.getQuery();
-        url = view.getUrl();
         columnCount = view.getColumnCount();
         defaults = view.initDefaults();
         childTemplate = view.getChildTemplate();
@@ -69,63 +62,12 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         LOGGER.info("getFindData " + opMode);
         // TODO: smarter: cache!
         infoPanelLines = currentView.fillInfoPanelLines();
-        return pluginPanelItems = currentView.executeQuery(query, data, columnCount);
-    }
-
-
-    public List<IdValuePair> executeIdValueQuery(final String query) {
-        try {
-            Connection conn = DriverManager.getConnection(url);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-
-            final List<IdValuePair> items = new ArrayList<>();
-
-            while (rs.next()) {
-                final int id = rs.getInt(1); // TODO: more checks
-                final String value = rs.getString(2);  // TODO: more checks
-                items.add(new IdValuePair(id, value));
-            }
-            return items;
-        } catch (Exception e) {
-            LOGGER.error(e, e);
-            return null;    // TODO
-        }
-    }
-
-
-    public Object executeScalarQuery (final String query)
-    {
-        try
-        {
-            Connection conn = DriverManager.getConnection (url);
-            Statement stmt = conn.createStatement ();
-            ResultSet rs = stmt.executeQuery (query);
-
-            Object value = null;
-
-            while (rs.next ())
-            {
-                value = rs.getObject (1); // TODO: more checks
-
-            }
-
-            rs.close();
-            stmt.close();
-
-            return value;
-
-        }
-        catch (Exception e)
-        {
-            LOGGER.error (e, e);
-            return null;    // TODO
-        }
+        return pluginPanelItems = currentView.executeQuery(data);
     }
 
 
     @Override
-    public int getFile (final String fileName, final String destPath, final int move, final int opmode) {
+    public int getFile(final String fileName, final String destPath, final int move, final int opmode) {
         int selectedItemId = AbstractPlugin.getSelectedItemCrc32 ();
         final File file = new File (destPath, String.valueOf(selectedItemId));
         try {
