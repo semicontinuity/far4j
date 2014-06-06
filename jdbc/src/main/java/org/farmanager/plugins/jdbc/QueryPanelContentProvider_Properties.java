@@ -1,7 +1,6 @@
 package org.farmanager.plugins.jdbc;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -62,38 +61,13 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
         LOGGER.info("getFindData " + opMode);
         // TODO: smarter: cache!
         infoPanelLines = currentView.fillInfoPanelLines();
-        return pluginPanelItems = currentView.executeQuery(data);
+        return pluginPanelItems = currentView.executeQuery();
     }
 
 
     @Override
-    public int getFile(final String destPath, final String fileName, final int move,
-            final int opmode) {
-        LOGGER.debug("getFile " + destPath + ' ' + fileName);
-        final int currentItem = AbstractPlugin.getCurrentItem();
-        int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
-        LOGGER.debug("getFile: " + selectedItemId);
-        final File file = new File(destPath, String.valueOf(selectedItemId));
-        try {
-            final FileWriter writer = new FileWriter(file);
-
-            writer.write(String.valueOf(selectedItemId));
-            writer.write('\n');
-            final String[] strings = data.get(selectedItemId);
-            for (String string : strings) {
-                writer.write(string);
-                writer.write('\n');
-            }
-
-            writer.close();
-        }
-        catch (IOException e) {
-            LOGGER.error(e,e);
-            return 1;
-        }
-
-        LOGGER.debug("getFile returns 0");
-        return 0;
+    public int getFile(final String destPath, final String fileName, final int move, final int opmode) {
+        return currentView.getFile(destPath, fileName);
     }
 
 
@@ -106,10 +80,10 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
     public int processKey(final int key, final int controlState) {
         int realKey = ProcessKeyFlags.clearedPreprocess(key);
         if (alt(controlState) && shift (controlState) && realKey == VK_F4) {
-            return handleFavorites();
+            return currentView.handleFavorites(queries, this);
         }
         else if (shift(controlState) && realKey == VK_F4) {
-            return handleInsert();
+            return currentView.handleInsert(this);
         }
         else if (noFlags(controlState) && realKey == VK_F4) {
             return handleUpdate();
@@ -158,7 +132,7 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
 
 
     private int handleDelete() {
-        if (properties.getProperty("delete.query") == null) {
+        if (currentView.getProperties().getProperty("delete.query") == null) {
             return 0;
         } else {
             if (new YesNoDialog("Delete", "Do you want to delete this record?", "OK", "Cancel").activate()) {
@@ -178,11 +152,11 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             return 0;
         }
         final int currentItem = AbstractPlugin.getCurrentItem();
-        int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
+        int selectedItemId = Integer.valueOf(currentView.pluginPanelItems[currentItem - 1].cFileName);
 
 //        int selectedItemId = AbstractPlugin.getSelectedItemCrc32();
         String[] selectedLineValues = data.get(selectedItemId);
-        ParametersDialog dialog = new ParametersDialog(this, properties, "update", selectedLineValues);
+        ParametersDialog dialog = new ParametersDialog(this, currentView.getProperties(), "update", selectedLineValues);
         if (!dialog.activate()) {
             LOGGER.debug("Update dialog dismissed");
             return 1;
@@ -191,61 +165,6 @@ public class QueryPanelContentProvider_Properties extends QueryPanelContentProvi
             currentView.executeUpdate(query);
             return 1;
         }
-    }
-
-
-    private int handleFavorites() {
-        final String[] titles = favoriteQueriesTitles();
-        if (titles.length == 0) return 0;
-
-        ItemSelectionDialog dialog = new ItemSelectionDialog ("Favorite queries", titles);
-        final int i = dialog.show();
-        if (i == -1)
-        {
-            return 1;
-        }
-        else
-        {
-//            return handleInsert(
-//                "favorite.query." + dialog.selectedItem());
-            final Query query = queries.get(dialog.selectedItem());
-            return query.handleInsert(this, defaults, currentView);
-        }
-    }
-
-
-    private int handleInsert() {
-        if (properties.getProperty("insert.query") == null) {
-            return 0;
-        }
-        final ParametersDialog dialog = new ParametersDialog(this, properties, "insert", defaults);
-        if (!dialog.activate()) {
-            return 1;
-        } else {
-            final String query = currentView.constructQuery("insert.query", dialog.getParams(null));
-            currentView.executeUpdate(query);
-            return 1;
-        }
-    }
-
-    private String[] favoriteQueriesTitles () {
-/*
-        final String count = properties.getProperty("favorite.query.count");
-        final int length = Integer.parseInt(count);
-        final String[] names = new String[length];
-        for (int i = 0; i < names.length; i++) {
-            names[i] = properties.getProperty("favorite.query." + i + ".query.title");
-
-        }
-        return names;
-*/
-        final List<Query> list = queries;
-        final String[] strings = new String[list.size()];
-        for (int i = 0; i < strings.length; i++) {
-            strings[i] = list.get(i).getTitle();
-            LOGGER.debug(strings[i]);
-        }
-        return strings;
     }
 
 

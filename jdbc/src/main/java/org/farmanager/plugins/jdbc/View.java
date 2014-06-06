@@ -25,22 +25,53 @@ import org.farmanager.api.jni.FarInfoPanelLine;
 import org.farmanager.api.jni.PanelColumnType;
 import org.farmanager.api.messages.Messages;
 import org.farmanager.api.panels.NamedColumnDescriptor;
+import org.farmanager.plugins.jdbc.queries.Query;
 
 public class View {
     private static final Logger LOGGER = Logger.getLogger(View.class);
 
-    private Properties properties;
-    private View parent;
+    protected Properties properties;
+    protected View parent;
     protected PanelMode[] panelModes;
+    /**
+     * In some reports, lines may have non-unique ids... take care of that
+     */
+    protected final Map<Integer, String[]> data;
+    protected PluginPanelItem[] pluginPanelItems;
+    protected String[] defaults;
 
     public View(final Properties properties, final View parent) {
         this.properties = new Properties();
         this.properties.putAll(properties);
         this.parent = parent;
-
+        this.data = new HashMap<>();
         this.panelModes = panelModes();
 
         loadDriver();
+    }
+
+    static String[] favoriteQueriesTitles(List<Query> queries1) {
+/*
+        final String count = properties.getProperty("favorite.query.count");
+        final int length = Integer.parseInt(count);
+        final String[] names = new String[length];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = properties.getProperty("favorite.query." + i + ".query.title");
+
+        }
+        return names;
+*/
+        final List<Query> list = queries1;
+        final String[] strings = new String[list.size()];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = list.get(i).getTitle();
+            LOGGER.debug(strings[i]);
+        }
+        return strings;
+    }
+
+    public Map<Integer, String[]> getData() {
+        return data;
     }
 
     private static String readStringFromFile (File file) throws IOException {
@@ -201,8 +232,11 @@ public class View {
         return properties.getProperty("column." + i + ".title");
     }
 
-
     String[] initDefaults() {
+        return defaults = defaults();
+    }
+
+    String[] defaults() {
         final String query = properties.getProperty("defaults.query");
         LOGGER.info("Defaults query=" + query);
         if (query == null) return null;
@@ -320,8 +354,8 @@ public class View {
         AbstractPlugin.redrawPanel();
     }
 
-    PluginPanelItem[] executeQuery(Map<Integer, String[]> data) {
-        return executeQuery(getQuery(), data, getColumnCount());
+    PluginPanelItem[] executeQuery() {
+        return pluginPanelItems = executeQuery(getQuery(), data, getColumnCount());
     }
 
     PluginPanelItem[] executeQuery(final String query, final Map<Integer, String[]> result,
@@ -406,7 +440,7 @@ public class View {
     public Object executeScalarQuery(final String query) {
         try {
             Connection conn = DriverManager.getConnection(getUrl());
-            Statement stmt = conn.createStatement ();
+            Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery (query);
 
             Object value = null;
@@ -443,6 +477,68 @@ public class View {
         catch (IOException e) {
             LOGGER.error(e,e);
             return 0;
+        }
+    }
+
+    int getFile(String destPath, String fileName) {
+        LOGGER.debug("getFile " + destPath + ' ' + fileName);
+        final int currentItem = AbstractPlugin.getCurrentItem();
+        int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
+        LOGGER.debug("getFile: " + selectedItemId);
+        final File file = new File(destPath, String.valueOf(selectedItemId));
+        try {
+            final FileWriter writer = new FileWriter(file);
+
+            writer.write(String.valueOf(selectedItemId));
+            writer.write('\n');
+            final String[] strings = getData().get(selectedItemId);
+            for (String string : strings) {
+                writer.write(string);
+                writer.write('\n');
+            }
+
+            writer.close();
+        }
+        catch (IOException e) {
+            LOGGER.error(e,e);
+            return 1;
+        }
+
+        LOGGER.debug("getFile returns 0");
+        return 0;
+    }
+
+    int handleFavorites(final List<Query> queries,
+            QueryPanelContentProvider_Properties queryPanelContentProvider_properties) {
+        final String[] titles = favoriteQueriesTitles(queries);
+        if (titles.length == 0) return 0;
+
+        ItemSelectionDialog dialog = new ItemSelectionDialog ("Favorite queries", titles);
+        final int i = dialog.show();
+        if (i == -1)
+        {
+            return 1;
+        }
+        else
+        {
+//            return handleInsert(
+//                "favorite.query." + dialog.selectedItem());
+            final Query query = queries.get(dialog.selectedItem());
+            return query.handleInsert(queryPanelContentProvider_properties, defaults, this);
+        }
+    }
+
+    int handleInsert(QueryPanelContentProvider_Properties queryPanelContentProvider_properties) {
+        if (properties.getProperty("insert.query") == null) {
+            return 0;
+        }
+        final ParametersDialog dialog = new ParametersDialog(queryPanelContentProvider_properties, properties, "insert", defaults);
+        if (!dialog.activate()) {
+            return 1;
+        } else {
+            final String query = constructQuery("insert.query", dialog.getParams(null));
+            executeUpdate(query);
+            return 1;
         }
     }
 }
