@@ -21,6 +21,7 @@ import org.farmanager.api.AbstractPlugin;
 import org.farmanager.api.PanelMode;
 import org.farmanager.api.PanelModeId;
 import org.farmanager.api.PluginPanelItem;
+import org.farmanager.api.dialogs.YesNoDialog;
 import org.farmanager.api.jni.FarInfoPanelLine;
 import org.farmanager.api.jni.PanelColumnType;
 import org.farmanager.api.messages.Messages;
@@ -39,6 +40,7 @@ public class View {
     protected final Map<Integer, String[]> data;
     protected PluginPanelItem[] pluginPanelItems;
     protected String[] defaults;
+    protected FarInfoPanelLine[] infoPanelLines;
 
     public View(final Properties properties, final View parent) {
         this.properties = new Properties();
@@ -49,6 +51,12 @@ public class View {
 
         loadDriver();
     }
+
+
+    String getQuery() {
+        return properties.getProperty("query");
+    }
+
 
     static String[] favoriteQueriesTitles(List<Query> queries1) {
 /*
@@ -249,20 +257,7 @@ public class View {
         return panelItems[0].customColumns;
     }
 
-    void exportData(final FileWriter fileWriter,
-            QueryPanelContentProvider_Properties queryPanelContentProvider_properties)
-            throws IOException
-    {
-        for (PluginPanelItem pluginPanelItem : queryPanelContentProvider_properties.pluginPanelItems) {
-            final String[] strings = pluginPanelItem.customColumns;
-            for (int i = 0; i < strings.length; i++) {
-                String string = strings[i];
-                printPadded(i, string, fileWriter);
-                fileWriter.write(' ');
-            }
-            fileWriter.write('\n');
-        }
-    }
+
 
 
     String deleteQuery(int selectedItemId) {
@@ -316,6 +311,10 @@ public class View {
     }
 
     FarInfoPanelLine[] fillInfoPanelLines() {
+        return infoPanelLines = infoPanelLines();
+    }
+
+    private FarInfoPanelLine[] infoPanelLines() {
         Properties properties = getProperties();
         String property;
         property = properties.getProperty("info.line.count");
@@ -413,9 +412,7 @@ public class View {
         }
     }
 
-    String getQuery() {
-        return properties.getProperty("query");
-    }
+
 
     public List<IdValuePair> executeIdValueQuery(final String query) {
         try {
@@ -539,6 +536,80 @@ public class View {
             final String query = constructQuery("insert.query", dialog.getParams(null));
             executeUpdate(query);
             return 1;
+        }
+    }
+
+    int handleUpdate(QueryPanelContentProvider_Properties queryPanelContentProvider_properties) {
+        LOGGER.debug("Update!");
+        if (updateQuery() == null) {
+            return 0;
+        }
+        final int currentItem = AbstractPlugin.getCurrentItem();
+        int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
+
+//        int selectedItemId = AbstractPlugin.getSelectedItemCrc32();
+        String[] selectedLineValues = queryPanelContentProvider_properties.data.get(selectedItemId);
+        ParametersDialog dialog = new ParametersDialog(queryPanelContentProvider_properties, getProperties(), "update", selectedLineValues);
+        if (!dialog.activate()) {
+            LOGGER.debug("Update dialog dismissed");
+            return 1;
+        } else {
+            String query = constructQuery("update.query", dialog.getParams(selectedItemId));
+            executeUpdate(query);
+            return 1;
+        }
+    }
+
+    int handleDelete() {
+        if (getProperties().getProperty("delete.query") == null) {
+            return 0;
+        } else {
+            if (new YesNoDialog("Delete", "Do you want to delete this record?", "OK", "Cancel").activate()) {
+                final int currentItem = AbstractPlugin.getCurrentItem();
+                int selectedItemId = Integer.valueOf(pluginPanelItems[currentItem - 1].cFileName);
+                LOGGER.info("Going to delete column with id " + selectedItemId);
+                String query = deleteQuery(selectedItemId);
+                executeUpdate(query);
+            }
+            return 1;
+        }
+    }
+
+
+    int handleExport(final File outputFile) {
+        try {
+            FileWriter fileWriter = new FileWriter(outputFile);
+            exportData(fileWriter);
+            exportInfo(fileWriter);
+            fileWriter.close();
+            return 0;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 1;
+        }
+    }
+
+    void exportData(final FileWriter fileWriter) throws IOException {
+        for (PluginPanelItem pluginPanelItem : pluginPanelItems) {
+            final String[] strings = pluginPanelItem.customColumns;
+            for (int i = 0; i < strings.length; i++) {
+                String string = strings[i];
+                printPadded(i, string, fileWriter);
+                fileWriter.write(' ');
+            }
+            fileWriter.write('\n');
+        }
+    }
+
+    void exportInfo(final FileWriter fileWriter) throws IOException {
+        if (infoPanelLines == null) return;
+        fileWriter.write('\n');
+        for (FarInfoPanelLine infoPanelLine : infoPanelLines) {
+            fileWriter.write(infoPanelLine.getText());
+            fileWriter.write(' ');
+            fileWriter.write(infoPanelLine.getData());
+            fileWriter.write('\n');
         }
     }
 }
